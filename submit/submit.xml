@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<job>
+
+  <command>
+    singularity exec -e -B /gpfs01 -B /star -B /star/u/youqi -B /tmp/youqi /gpfs01/star/pwg/youqi/run12/final/star_star.simg bash /gpfs01/star/pwg/youqi/run12/final/container.sh &data_file;
+    mv $SCRATCH/*.root &out;
+  </command>
+
+  <ResourceUsage>
+    <Times>
+      <MaxWallTime>2</MaxWallTime>
+    </Times>
+    <Memory>
+      <MinMemory>4500</MinMemory>
+    </Memory>
+  </ResourceUsage>
+
+  <SandBox>
+    <Package>
+      <File>file:./bin/RunppTestAna</File>
+      <File>file:./raw_data.list</File>
+      <File>file:./runimage.sh</File>
+      <File>file:./star_star.simg</File>
+      <File>file:./container.sh</File>
+      <File>file:./setup.sh</File>
+      <File>file:./raw_data/</File>
+    </Package>
+  </SandBox>
+
+  <Generator>
+    <Location>./submit/scheduler/report/</Location>
+    <ScriptLocation>./submit/scheduler/csh/</ScriptLocation>
+    <ListLocation>./submit/scheduler/list/</ListLocation>
+  </Generator>
+
+  <stdout URL="file:&log;/&data_file;.log" />
+  <stderr URL="file:&log;/&data_file;.err" />
+
+</job>
