@@ -5,15 +5,12 @@ import sys
 import argparse
 import gc
 import os
-import time
 import random
 import numpy as np
-from matplotlib import pyplot as plt
 import pandas as pd
 import uproot
 import tensorrt
 import energyflow as ef
-import energyflow.archs
 import tensorflow as tf
 
 print('Number of arguments:', len(sys.argv), 'arguments')
@@ -27,102 +24,10 @@ def applyCut(inputDataframe, cut, text=None):
     dataframe = inputDataframe
     nbeforecut = dataframe.shape[0]
     cutDataframe = dataframe.query(cut)
-    if text:
-        print (text, cutDataframe.shape[0], ' fraction kept: %2.1f'%(100.0*float(cutDataframe.shape[0])/nbeforecut))
     return cutDataframe
-
 
 def getData(observables, filename, treename):
     return (uproot.open(filename)[treename]).arrays(observables, library='pd')
-
-# Prepare dataframe for PYTHIA6+embedding
-observables2 = ['pt','m','q2','rg','zg','mg','w','reject']
-observabless2 = ['pts','ms','q2s','rgs','zgs','mgs','ws','rejects']
-inputFiles = ['/vast/palmer/home.grace/ys668/output/run12/all0818_2.root']
-treeName = ["MatchedTree"]
-df1 = applyCut(getData(observables2+observabless2, inputFiles[0], treeName[0]), 'reject<=0 and rejects<=0 and rg>0 and rgs>0 and w<5e-10 and pts>15 and ms>1')
-df1 = df1.rename(columns={"q2": "q", "q2s": "qs"})
-df1.eval('aa=(m**2-mg**2)/pt**2', inplace=True)
-df1.eval('aas=(ms**2-mgs**2)/pts**2', inplace=True)
-df1['relw_new'] = np.asarray(df1['w'])/max(df1['w'])
-    
-# Prepare dataframe for data
-observables1 = ['pt','m','q','rg','zg','mg']
-observabless1 = ['pts','ms','qs','rgs','zgs','mgs']
-file = uproot.open('/vast/palmer/home.grace/ys668/output/run12/data0616.root')
-tree = file["ResultTree"].arrays(observables1, library='np')
-df_data = pd.DataFrame(np.transpose(np.array((np.concatenate(tree['pt']), np.concatenate(tree['m']), np.concatenate(tree['q']), np.concatenate(tree['rg']), np.concatenate(tree['zg']), np.concatenate(tree['mg'])))), columns=observabless1)
-df2 = applyCut(df_data, 'rgs > 0')
-df2.eval('aas=(ms**2-mgs**2)/pts**2', inplace=True)
-
-ptedges=[15,20,25,30,40,65]
-scaling=[0.96878842, 0.97606573, 0.97070026, 0.97702706, 0.99731198]
-
-w2=np.ones(df2.shape[0])
-for i in range(0,df2.shape[0]):
-    for j in range(0, len(ptedges)-1):
-        if (ptedges[j] < df2.iloc[i]['pts'] < ptedges[j+1]):
-            w2[i] *= scaling[j]
-            break
-df2['w']=w2
-
-datasets = {'pythia': df1, 'data': df2}
-obs_multifold = ['pt', 'm', 'q', 'rg', 'zg', 'mg']
-obs = {}
-
-obs.setdefault('pt', {}).update({
-    'func': lambda dset, s: np.asarray(datasets[dset]['pt'+s]),
-})
-obs.setdefault('q', {}).update({
-    'func': lambda dset, s: np.asarray(datasets[dset]['q'+s]),
-})
-obs.setdefault('rg', {}).update({
-    'func': lambda dset, s: np.asarray(datasets[dset]['rg'+s]),
-})
-obs.setdefault('zg', {}).update({
-    'func': lambda dset, s: np.asarray(datasets[dset]['zg'+s]),
-})
-obs.setdefault('m', {}).update({
-    'func': lambda dset, s: np.asarray(datasets[dset]['m'+s]),
-})
-obs.setdefault('mg', {}).update({
-    'func': lambda dset, s: np.asarray(datasets[dset]['mg'+s]),
-})
-
-for obkey, ob in obs.items():
-    ob['genobs'], ob['simobs'] = ob['func']('pythia', ''), ob['func']('pythia', 's')
-    ob['dataobs'] = ob['func']('data', 's')
-    print('Done with', obkey)
-
-def to_categorical(labels, num_classes=None):
-    if num_classes is None:
-        num_classes = int(np.max(labels)) + 1
-    y = np.asarray(labels, dtype=int)
-    n = y.shape[0]
-    categorical = np.zeros((n, num_classes))
-    categorical[np.arange(n), y] = 1
-    return categorical
-
-X_det = np.asarray([np.concatenate((obs[obkey]['dataobs'], obs[obkey]['simobs'])) for obkey in obs_multifold]).T
-Y_det = to_categorical(np.concatenate((np.ones(len(obs['pt']['dataobs'])), np.zeros(len(obs['pt']['simobs'])))))
-X_gen = np.asarray([np.concatenate((obs[obkey]['genobs'], obs[obkey]['genobs'])) for obkey in obs_multifold]).T
-Y_gen = to_categorical(np.concatenate((np.ones(len(obs['pt']['genobs'])), np.zeros(len(obs['pt']['genobs'])))))
-X_det = (X_det - np.mean(X_det, axis=0))/np.std(X_det, axis=0)
-X_gen = (X_gen - np.mean(X_gen, axis=0))/np.std(X_gen, axis=0)
-norm = sum(df2['w'])/sum(df1['relw_new'])
-wdata = df2['w']
-winit = norm*np.asarray(df1['relw_new'])
-
-itnum = 25
-model_layer_sizes = [100, 100, 100]
-det_args = {'input_dim': len(obs_multifold), 'dense_sizes': model_layer_sizes,
-            'patience': 50, 'filepath': 'Step1_{}', 'save_weights_only': True,
-            'modelcheck_opts': {'save_best_only': True, 'verbose': 1}}
-mc_args = {'input_dim': len(obs_multifold), 'dense_sizes': model_layer_sizes,
-           'patience': 50, 'filepath': 'Step2_{}', 'save_weights_only': True,
-           'modelcheck_opts': {'save_best_only': True, 'verbose': 1}}
-fitargs1 = {'batch_size': 200000, 'epochs': 100, 'verbose': 1}
-fitargs2 = {'batch_size': 200000, 'epochs': 100, 'verbose': 1}
 
 def reweight(X, Y, w, model, filepath, fitargs, val_data=None):
     val_dict = {'validation_data': val_data} if val_data is not None else {}
@@ -206,19 +111,98 @@ def omnifold(X_gen_i, Y_gen_i, X_det_i, Y_det_i, wdata, winit, det_model, mc_mod
             np.save(weights_filename, ws)
     return ws, history_arr
 
+def to_categorical(labels, num_classes=None):
+    if num_classes is None:
+        num_classes = int(np.max(labels)) + 1
+    y = np.asarray(labels, dtype=int)
+    n = y.shape[0]
+    categorical = np.zeros((n, num_classes))
+    categorical[np.arange(n), y] = 1
+    return categorical
+
+# prepare dataframe for PYTHIA6+embedding
+observables2 = ['pt','m','q2','rg','zg','mg','w','reject']
+observabless2 = ['pts','ms','q2s','rgs','zgs','mgs','ws','rejects']
+embed_file = '/gpfs01/star/pwg/youqi/run12/final/Results/matched/matched.root'
+df1 = applyCut(getData(observables2+observabless2, embed_file, 'MatchedTree'), 'reject<=0 and rejects<=0 and rg>0 and rgs>0 and w<5e-10 and pts>15 and ms>1')
+df1 = df1.rename(columns={"q2": "q", "q2s": "qs"})
+df1['relw_new'] = np.asarray(df1['w'])/max(df1['w'])
+    
+# prepare dataframe for data
+observables1 = ['pt','m','q','rg','zg','mg']
+observabless1 = ['pts','ms','qs','rgs','zgs','mgs']
+data_file = uproot.open('/gpfs01/star/pwg/youqi/run12/final/Results/data/data.root')
+tree = data_file["ResultTree"].arrays(observables1, library='np')
+df_data = pd.DataFrame(np.transpose(np.array((np.concatenate(tree['pt']), np.concatenate(tree['m']), np.concatenate(tree['q']), np.concatenate(tree['rg']), np.concatenate(tree['zg']), np.concatenate(tree['mg'])))), columns=observabless1)
+df2 = applyCut(df_data, 'rgs > 0')
+
+# set up fake rates
+ptedges=[15,20,25,30,40,65]
+scaling=[0.96878842, 0.97606573, 0.97070026, 0.97702706, 0.99731198] # using fake rates from old (2015) embedding
+w2 = np.ones(df2.shape[0])
+for i in range(0,df2.shape[0]):
+    for j in range(0, len(ptedges)-1):
+        if (ptedges[j] < df2.iloc[i]['pts'] < ptedges[j+1]):
+            w2[i] *= scaling[j]
+            break
+df2['w']=w2
+
+# set input arrays for multifold
+datasets = {'pythia': df1, 'data': df2}
+obs_multifold = ['pt', 'm', 'q', 'rg', 'zg', 'mg']
+obs = {}
+obs.setdefault('pt', {}).update({
+    'func': lambda dset, s: np.asarray(datasets[dset]['pt'+s]),
+})
+obs.setdefault('q', {}).update({
+    'func': lambda dset, s: np.asarray(datasets[dset]['q'+s]),
+})
+obs.setdefault('rg', {}).update({
+    'func': lambda dset, s: np.asarray(datasets[dset]['rg'+s]),
+})
+obs.setdefault('zg', {}).update({
+    'func': lambda dset, s: np.asarray(datasets[dset]['zg'+s]),
+})
+obs.setdefault('m', {}).update({
+    'func': lambda dset, s: np.asarray(datasets[dset]['m'+s]),
+})
+obs.setdefault('mg', {}).update({
+    'func': lambda dset, s: np.asarray(datasets[dset]['mg'+s]),
+})
+for obkey, ob in obs.items():
+    ob['genobs'], ob['simobs'] = ob['func']('pythia', ''), ob['func']('pythia', 's')
+    ob['dataobs'] = ob['func']('data', 's')
+X_det = np.asarray([np.concatenate((obs[obkey]['dataobs'], obs[obkey]['simobs'])) for obkey in obs_multifold]).T
+Y_det = to_categorical(np.concatenate((np.ones(len(obs['pt']['dataobs'])), np.zeros(len(obs['pt']['simobs'])))))
+X_gen = np.asarray([np.concatenate((obs[obkey]['genobs'], obs[obkey]['genobs'])) for obkey in obs_multifold]).T
+Y_gen = to_categorical(np.concatenate((np.ones(len(obs['pt']['genobs'])), np.zeros(len(obs['pt']['genobs'])))))
+X_det = (X_det - np.mean(X_det, axis=0))/np.std(X_det, axis=0)
+X_gen = (X_gen - np.mean(X_gen, axis=0))/np.std(X_gen, axis=0)
+norm = sum(df2['w'])/sum(df1['relw_new'])
+wdata = df2['w']
+winit = norm*np.asarray(df1['relw_new'])
+
+# set multifold parameters
+itnum = 25
+model_layer_sizes = [100, 100, 100]
+det_args = {'input_dim': len(obs_multifold), 'dense_sizes': model_layer_sizes,
+            'patience': 50, 'filepath': 'Step1_{}', 'save_weights_only': True,
+            'modelcheck_opts': {'save_best_only': True, 'verbose': 1}}
+mc_args = {'input_dim': len(obs_multifold), 'dense_sizes': model_layer_sizes,
+           'patience': 50, 'filepath': 'Step2_{}', 'save_weights_only': True,
+           'modelcheck_opts': {'save_best_only': True, 'verbose': 1}}
+fitargs1 = {'batch_size': 200000, 'epochs': 100, 'verbose': 1}
+fitargs2 = {'batch_size': 200000, 'epochs': 100, 'verbose': 1}
 tf.config.list_physical_devices('GPU')
 
-multifold_ws,history = omnifold(X_gen, Y_gen, X_det, Y_det, wdata, winit, (ef.archs.DNN, det_args), (ef.archs.DNN, mc_args),
-                                fitargs1, fitargs2, val=0.2, it=itnum, trw_ind=-2, weights_filename=str(seed))
+# multifold
+multifold_ws,history = omnifold(X_gen, Y_gen, X_det, Y_det, wdata, winit, (ef.archs.DNN, det_args), (ef.archs.DNN, mc_args), fitargs1, fitargs2, val=0.2, it=itnum, trw_ind=-2, weights_filename=str(seed))
 
-path='/gpfs/gibbs/project/caines/ys668/run12/csvs/'
-
+# save results
+output_path='/gpfs01/star/pwg/youqi/run12/final/Results/multifold_output/'
 if (os.path.isfile("jet_noweight.csv")==False):
     df3 = df1[obs_multifold]
-    df3.to_csv(path+'jet_noweight.csv',index=False)
-
+    df3.to_csv(output_path+'jet_noweight.csv',index=False)
 for i in range(0, itnum):   
-    #if (i%5 != 0):
-    #    continue
     df = pd.DataFrame(data=multifold_ws[2*(i+1)]/sum(multifold_ws[2*(i+1)]), columns=['weight'])
-    df.to_csv(path+'it'+str(i+1)+'_seed'+str(seed)+'.csv',index=False)
+    df.to_csv(output_path+'it'+str(i+1)+'_seed'+str(seed)+'.csv',index=False)
