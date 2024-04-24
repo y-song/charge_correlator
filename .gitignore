@@ -1,2 +1,6 @@
+src/obj
 raw_data/
 star_star.simg
+*.d
+*.so
+*.pcm
