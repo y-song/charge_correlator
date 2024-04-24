@@ -119,7 +119,7 @@ int main(int argc, const char **argv)
   float pttot;
   ResultTree->Branch("pttot", &pttot, "pttot/F");
   int reject = -9;
-  ResultTree->Branch("reject", reject, "reject/I");
+  ResultTree->Branch("reject", &reject, "reject/I");
 
   TClonesArray Jets("TStarJetVectorJet");
   ResultTree->Branch("Jets", &Jets);
@@ -190,8 +190,6 @@ int main(int argc, const char **argv)
       default:
         cerr << "Unknown return value." << endl;
         return -1;
-        // I understand that a break after continue or return is silly...
-        // But it's necessary in nested switches in root and I don't want to lose the habit
         break;
       }
 
@@ -207,9 +205,8 @@ int main(int argc, const char **argv)
       mult = ppana->GetEventMult();
       pttot = ppana->GetPttot();
       reject = ppana->GetRejectCode();
-	
+     
       vector<ResultStruct> Result = ppana->GetResult();
-
       njets = Result.size();
       int ijet = 0;
       if (njets == 0)
