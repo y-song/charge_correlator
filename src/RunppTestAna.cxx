@@ -112,12 +112,14 @@ int main(int argc, const char **argv)
   ResultTree->Branch("njets", &njets, "njets/I");
   double vz;
   ResultTree->Branch("vz", &vz, "vz/D");
-  int highw;
-  ResultTree->Branch("highw", &highw, "highw/I");
+  //int highw;
+  //ResultTree->Branch("highw", &highw, "highw/I");
   int mult;
   ResultTree->Branch("mult", &mult, "mult/I");
   float pttot;
   ResultTree->Branch("pttot", &pttot, "pttot/F");
+  int reject = -9;
+  ResultTree->Branch("reject", reject, "reject/I");
 
   TClonesArray Jets("TStarJetVectorJet");
   ResultTree->Branch("Jets", &Jets);
@@ -137,13 +139,9 @@ int main(int argc, const char **argv)
   ResultTree->Branch("mg", mg, "mg[njets]/D");
   int n[1000];
   ResultTree->Branch("n", n, "n[njets]/I");
-  int nch[1000];
-  ResultTree->Branch("nch", nch, "nch[njets]/I");
   int index[1000];
   ResultTree->Branch("index", index, "index[njets]/I");
-  int reject[1000];
-  ResultTree->Branch("reject", reject, "reject[njets]/I");
-
+  
   // Helpers
   TStarJetVector *sv;
 
@@ -177,7 +175,6 @@ int main(int argc, const char **argv)
         continue;
         break;
       case EVENTRESULT::NOTACCEPTED:
-        cout << "Event rejected" << endl;
         // continue;
         break;
       case EVENTRESULT::NOCONSTS:
@@ -206,9 +203,10 @@ int main(int argc, const char **argv)
       runid1 = ppana->GetRunid1();
       eventid = ppana->GetEventid();
       vz = ppana->GetVz();
-      highw = ppana->CheckHighW();
+      //highw = ppana->CheckHighW();
       mult = ppana->GetEventMult();
       pttot = ppana->GetPttot();
+      reject = ppana->GetRejectCode();
 	
       vector<ResultStruct> Result = ppana->GetResult();
 
@@ -222,10 +220,11 @@ int main(int argc, const char **argv)
       for (auto &gr : Result)
       {
 
-        //TStarJetVector sv = TStarJetVector(MakeTLorentzVector(gr.orig));
-        //sv.SetCharge(gr.orig.user_info<JetAnalysisUserInfo>().GetQuarkCharge() / 3);
-        //new (Jets[ijet]) TStarJetVectorJet(sv);
-        nef[ijet] = gr.orig.user_info<JetAnalysisUserInfo>().GetNumber();
+        TStarJetVector sv = TStarJetVector(MakeTLorentzVector(gr.orig));
+        sv.SetCharge(gr.orig.user_info<JetAnalysisUserInfo>().GetQuarkCharge() / 3);
+        new (Jets[ijet]) TStarJetVectorJet(sv);
+        
+	nef[ijet] = gr.orig.user_info<JetAnalysisUserInfo>().GetNumber();
         pt[ijet] = gr.orig.perp();
         m[ijet] = gr.orig.m();
         q[ijet] = gr.q;
@@ -234,8 +233,7 @@ int main(int argc, const char **argv)
         mg[ijet] = gr.sd.m();
         n[ijet] = gr.orig.constituents().size();
         index[ijet] = ijet;
-        reject[ijet] = gr.reject;
-
+        
         ijet++;
       }
 

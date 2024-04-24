@@ -1,4 +1,6 @@
-src/obj
+bin/
+results/
+src/obj/
 raw_data/
 star_star.simg
 *.d

@@ -75,8 +75,7 @@ public:
   PseudoJet orig;
   PseudoJet sd;
   double q;
-  int reject;
-  ResultStruct(PseudoJet orig, PseudoJet sd, double q, int reject) : orig(orig), sd(sd), q(q), reject(reject){};
+  ResultStruct(PseudoJet orig, PseudoJet sd, double q) : orig(orig), sd(sd), q(q){};
 
   static bool origptgreater(ResultStruct const &a, ResultStruct const &b)
   {
@@ -152,6 +151,7 @@ private:
   int mult;
   double refmult = 0;
   double weight = 0;
+  int reject;
 
   JetAnalyzer *pJA = 0;
 
@@ -179,6 +179,7 @@ public:
 
   /// Get jet radius
   inline double GetR() { return pars.R; };
+
   /// Set jet radius
   inline void SetR(const double newv) { pars.R = newv; };
 
@@ -205,9 +206,11 @@ public:
   /// Get the vz of the current event
   inline double GetVz() { return vz; };
 
-  inline double CheckHighW() { return highw; };
+  //inline double CheckHighW() { return highw; };
 
   inline int GetEventMult() { return mult; };
+
+  inline int GetRejectCode() { return reject; };
 
   /// Get the Trigger (HT) object if it exists, for matching
   inline TStarJetVector *GetTrigger() const { return pHT; };

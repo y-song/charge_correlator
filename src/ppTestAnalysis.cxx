@@ -378,6 +378,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
   // -------------------------------
   Result.clear();
   weight = 1;
+  reject = -9;
   particles.clear();
   // cout << " test " << endl;
 
@@ -388,8 +389,6 @@ EVENTRESULT ppTestAnalysis::RunEvent()
   case MCPICO:
     if (!pReader->NextEvent())
     {
-      // cout << "Can't find a next event" << endl;
-      // done=true;
       pReader->PrintStatus();
       return EVENTRESULT::ENDOFINPUT;
       break;
@@ -419,7 +418,6 @@ EVENTRESULT ppTestAnalysis::RunEvent()
       runid = filehash;
       eventid = pReader->GetNOfCurrentEvent();
     }
-
     break;
   default:
     cerr << "Unknown intype " << pars.intype << endl;
@@ -494,12 +492,8 @@ EVENTRESULT ppTestAnalysis::RunEvent()
 
   // For pythia, use cross section as weight
   // ---------------------------------------
-  if (TParameter<double> *sigmaGen = (TParameter<double> *)Events->GetCurrentFile()->Get("sigmaGen"))
-  {
-    weight = sigmaGen->GetVal();
-  }
-
-  if (pars.InputName.Contains("Clean"))
+ 
+  if (pars.InputName.Contains("pt-hat"))
   {
     TString currentfile = pReader->GetInputChain()->GetCurrentFile()->GetName();
     weight = LookupRun12Xsec(currentfile);
@@ -520,37 +514,25 @@ EVENTRESULT ppTestAnalysis::RunEvent()
 
   JetAnalyzer &JA = *pJA;
   vector<PseudoJet> JAResult = sorted_by_pt(select_jet(JA.inclusive_jets()));
-
+  
   if (JAResult.size() == 0)
   {
-    // cout << "Nothing found" << endl;
     return EVENTRESULT::NOJETS;
   }
 
-  highw = 0;
-  // record event with a jet pT > 2*pTHat upper bound
-  if ((pars.InputName.Contains("2_3") && JAResult[0].perp() > 6.0) || (pars.InputName.Contains("3_4") && JAResult[0].perp() > 8.0) || (pars.InputName.Contains("4_5") && JAResult[0].perp() > 10.0) || (pars.InputName.Contains("5_7") && JAResult[0].perp() > 14.0) || (pars.InputName.Contains("7_9") && JAResult[0].perp() > 18.0) || (pars.InputName.Contains("9_11") && JAResult[0].perp() > 22.0) || (pars.InputName.Contains("11_15") && JAResult[0].perp() > 30.0) || (pars.InputName.Contains("15_20") && JAResult[0].perp() > 40.0) || (pars.InputName.Contains("20_25") && JAResult[0].perp() > 50.0) || (pars.InputName.Contains("25_35") && JAResult[0].perp() > 70.0) || (pars.InputName.Contains("35_-1") && JAResult[0].perp() > 1000.0))
+  // check if the event has high weight or large |vz|
+  else if ((pars.InputName.Contains("hat23_") && JAResult[0].perp() > 6.0) || (pars.InputName.Contains("hat34_") && JAResult[0].perp() > 8.0) || (pars.InputName.Contains("hat45_") && JAResult[0].perp() > 10.0) || (pars.InputName.Contains("hat57_") && JAResult[0].perp() > 14.0) || (pars.InputName.Contains("hat79_") && JAResult[0].perp() > 18.0) || (pars.InputName.Contains("hat911_") && JAResult[0].perp() > 22.0) || (pars.InputName.Contains("hat1115_") && JAResult[0].perp() > 30.0) || (pars.InputName.Contains("hat1520_") && JAResult[0].perp() > 40.0) || (pars.InputName.Contains("hat2025_") && JAResult[0].perp() > 50.0) || (pars.InputName.Contains("hat2535_") && JAResult[0].perp() > 70.0) || (pars.InputName.Contains("hat3545_") && JAResult[0].perp() > 90.0) || (pars.InputName.Contains("hat4555_") && JAResult[0].perp() > 110.0) || (pars.InputName.Contains("hat55999_") && JAResult[0].perp() > 1000.0))   
   {
-    highw = 1;
+    reject = 1;
+    return EVENTRESULT::NOTACCEPTED;
   }
-  // ue
-  vector<double> ptue_arr{};
-  if (JAResult.size() != 0 && particles.size() != 0)
+  else if (abs(vz) > pars.VzCut)
   {
-    for (PseudoJet &part : particles)
-    {
-      if (part.user_info<JetAnalysisUserInfo>().GetQuarkCharge() == 0)
-        continue;
-      PseudoJet &lead = JAResult[0];
-      if (abs(lead.delta_phi_to(part)) < pi / 3 || abs(lead.delta_phi_to(part)) > 2 * pi / 3)
-        continue;
-      if (part.perp() > 0.2)
-      {
-        ptue_arr.push_back(part.perp());
-      }
-    }
+    reject = 2;
+    return EVENTRESULT::NOTACCEPTED;
   }
 
+  reject = 0;
   int njets = JAResult.size();
 
   fastjet::contrib::SoftDrop sd(0, 0.1);
@@ -562,7 +544,6 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     PseudoJet &SDJet = sdjets[ijet];
     PseudoJet NeutralPart = join(OnlyNeutral(CurrentJet.constituents()));
     PseudoJet ChargedPart = join(OnlyCharged(CurrentJet.constituents()));
-    int nch = ChargedPart.constituents().size();
 
     // jet charge
     double numerator = 0.0;
@@ -596,17 +577,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     if (pars.MaxJetNEF < 1.0 && jetptne / jetpttot > pars.MaxJetNEF)
       continue;
 
-    // check if the event has high weight
-    int reject = 0;
-    if ((pars.InputName.Contains("hat23_") && JAResult[0].perp() > 6.0) || (pars.InputName.Contains("hat34_") && JAResult[0].perp() > 8.0) || (pars.InputName.Contains("hat45_") && JAResult[0].perp() > 10.0) || (pars.InputName.Contains("hat57_") && JAResult[0].perp() > 14.0) || (pars.InputName.Contains("hat79_") && JAResult[0].perp() > 18.0) || (pars.InputName.Contains("hat911_") && JAResult[0].perp() > 22.0) || (pars.InputName.Contains("hat1115_") && JAResult[0].perp() > 30.0) || (pars.InputName.Contains("hat1520_") && JAResult[0].perp() > 40.0) || (pars.InputName.Contains("hat2025_") && JAResult[0].perp() > 50.0) || (pars.InputName.Contains("hat2535_") && JAResult[0].perp() > 70.0) || (pars.InputName.Contains("hat3545_") && JAResult[0].perp() > 90.0) || (pars.InputName.Contains("hat4555_") && JAResult[0].perp() > 110.0) || (pars.InputName.Contains("hat55999_") && JAResult[0].perp() > 1000.0))   
-    {
-      reject = 1;
-    }
-    if (abs(vz) > pars.VzCut)
-    {
-      reject = 2;
-    }
-    Result.push_back(ResultStruct(CurrentJet, SDJet, q, reject));
+   Result.push_back(ResultStruct(CurrentJet, SDJet, q));
   }
   // By default, sort for original jet pt
   sort(Result.begin(), Result.end(), ResultStruct::origptgreater);
@@ -705,7 +676,7 @@ void TurnOffCuts(std::shared_ptr<TStarJetPicoReader> pReader)
   pReader->SetProcessTowers(false);
   TStarJetPicoEventCuts *evCuts = pReader->GetEventCuts();
   evCuts->SetTriggerSelection("All"); // All, MB, HT, pp, ppHT, ppJP
-  evCuts->SetVertexZCut(30);
+  evCuts->SetVertexZCut(999);
   evCuts->SetRefMultCut(0);
   evCuts->SetVertexZDiffCut(999999);
 
