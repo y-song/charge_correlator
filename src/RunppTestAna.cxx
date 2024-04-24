@@ -116,6 +116,8 @@ int main(int argc, const char **argv)
   ResultTree->Branch("highw", &highw, "highw/I");
   int mult;
   ResultTree->Branch("mult", &mult, "mult/I");
+  float pttot;
+  ResultTree->Branch("pttot", &pttot, "pttot/F");
 
   TClonesArray Jets("TStarJetVectorJet");
   ResultTree->Branch("Jets", &Jets);
@@ -139,10 +141,6 @@ int main(int argc, const char **argv)
   ResultTree->Branch("nch", nch, "nch[njets]/I");
   int index[1000];
   ResultTree->Branch("index", index, "index[njets]/I");
-  int nue[1000];
-  ResultTree->Branch("nue", nue, "nue[njets]/I");
-  double ptue[1000];
-  ResultTree->Branch("ptue", ptue, "ptue[njets]/D");
   int reject[1000];
   ResultTree->Branch("reject", reject, "reject[njets]/I");
 
@@ -210,7 +208,8 @@ int main(int argc, const char **argv)
       vz = ppana->GetVz();
       highw = ppana->CheckHighW();
       mult = ppana->GetEventMult();
-
+      pttot = ppana->GetPttot();
+	
       vector<ResultStruct> Result = ppana->GetResult();
 
       njets = Result.size();
@@ -223,9 +222,9 @@ int main(int argc, const char **argv)
       for (auto &gr : Result)
       {
 
-        TStarJetVector sv = TStarJetVector(MakeTLorentzVector(gr.orig));
-        sv.SetCharge(gr.orig.user_info<JetAnalysisUserInfo>().GetQuarkCharge() / 3);
-        new (Jets[ijet]) TStarJetVectorJet(sv);
+        //TStarJetVector sv = TStarJetVector(MakeTLorentzVector(gr.orig));
+        //sv.SetCharge(gr.orig.user_info<JetAnalysisUserInfo>().GetQuarkCharge() / 3);
+        //new (Jets[ijet]) TStarJetVectorJet(sv);
         nef[ijet] = gr.orig.user_info<JetAnalysisUserInfo>().GetNumber();
         pt[ijet] = gr.orig.perp();
         m[ijet] = gr.orig.m();
@@ -234,10 +233,7 @@ int main(int argc, const char **argv)
         zg[ijet] = gr.sd.structure_of<fastjet::contrib::SoftDrop>().symmetry();
         mg[ijet] = gr.sd.m();
         n[ijet] = gr.orig.constituents().size();
-        nch[ijet] = gr.nch;
         index[ijet] = ijet;
-        nue[ijet] = gr.nue;
-        ptue[ijet] = gr.ptue;
         reject[ijet] = gr.reject;
 
         ijet++;

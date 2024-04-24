@@ -74,18 +74,9 @@ class ResultStruct
 public:
   PseudoJet orig;
   PseudoJet sd;
-  int nch;
   double q;
-  int nue;
-  double ptue;
   int reject;
-  ResultStruct(PseudoJet orig, PseudoJet sd, int nch, double q, int nue, double ptue, int reject) : orig(orig),
-                                                                                                    sd(sd),
-                                                                                                    nch(nch),
-                                                                                                    q(q),
-                                                                                                    nue(nue),
-                                                                                                    ptue(ptue),
-                                                                                                    reject(reject){};
+  ResultStruct(PseudoJet orig, PseudoJet sd, double q, int reject) : orig(orig), sd(sd), q(q), reject(reject){};
 
   static bool origptgreater(ResultStruct const &a, ResultStruct const &b)
   {
@@ -155,6 +146,7 @@ private:
   int eventid;
   int runid;
   int runid1;
+  float pttot;
   double vz;
   int highw;
   int mult;
@@ -208,6 +200,8 @@ public:
   /// Get the eventid of the current event
   inline double GetEventid() { return eventid; };
 
+  inline float GetPttot() { return pttot; };
+
   /// Get the vz of the current event
   inline double GetVz() { return vz; };
 
@@ -222,15 +216,6 @@ public:
   inline const vector<ResultStruct> &GetResult() { return Result; }
 };
 
-/* Helper to perform the TStarJetPicoReader initialization
- */
-TStarJetPicoReader GetReader(TString ChainPattern = "~putschke/Data/Pico_ppHT/*.root",
-                             TString TriggerString = "ppHT",
-                             TString ChainName = "JetTree",
-                             const double RefMultCut = 0);
-
-/* Slightly different, preferred version of GetReader
- */
 shared_ptr<TStarJetPicoReader> SetupReader(TChain *chain, const ppTestParameters &pars);
 
 /* For use with GeantMc data

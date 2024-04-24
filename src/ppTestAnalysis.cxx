@@ -149,84 +149,87 @@ ppTestAnalysis::ppTestAnalysis(const int argc, const char **const argv)
         pars.intype = MCPICO;
         continue;
       }
-      else if (arg == "-N")
+      argsokay = false;
+      break;
+    }
+    else if (arg == "-N")
+    {
+      if (++parg == arguments.end())
       {
-        if (++parg == arguments.end())
-        {
-          argsokay = false;
-          break;
-        }
-        NEvents = atoi(parg->data());
+        argsokay = false;
+        break;
       }
-      else if (arg == "-fakeeff")
+      NEvents = atoi(parg->data());
+    }
+    else if (arg == "-fakeeff")
+    {
+      if (++parg == arguments.end())
       {
-        if (++parg == arguments.end())
-        {
-          argsokay = false;
-          break;
-        }
-        pars.FakeEff = atof(parg->data());
-        cout << "Setting fake efficiency to " << pars.FakeEff << endl;
-        if (pars.FakeEff < 0 || pars.FakeEff > 1)
-        {
-          argsokay = false;
-          break;
-        }
+        argsokay = false;
+        break;
       }
-      else if (arg == "-towunc")
-      {
-        if (++parg == arguments.end())
-        {
-          argsokay = false;
-          break;
-        }
-        pars.IntTowScale = atoi(parg->data());
-        pars.fTowScale = 1.0 + pars.IntTowScale * pars.fTowUnc;
-        cout << "Setting tower scale to " << pars.fTowScale << endl;
-        if (pars.IntTowScale < -1 || pars.FakeEff > 1)
-        {
-          argsokay = false;
-          break;
-        }
-      }
-      else if (arg == "-geantnum")
-      {
-        if (++parg == arguments.end())
-        {
-          argsokay = false;
-          break;
-        }
-        if (*parg != "0" && *parg != "1")
-        {
-          argsokay = false;
-          break;
-        }
-        forcedgeantnum = true;
-        pars.UseGeantNumbering = bool(atoi(parg->data()));
-      }
-      else if (arg == "-jetnef")
-      {
-        if (++parg == arguments.end())
-        {
-          argsokay = false;
-          break;
-        }
-        pars.MaxJetNEF = atof(parg->data());
-        cout << "Setting Max Jet NEF to " << pars.MaxJetNEF << endl;
-        if (pars.MaxJetNEF < 0 || pars.MaxJetNEF > 1)
-        {
-          argsokay = false;
-          break;
-        }
-      }
-      else
+      pars.FakeEff = atof(parg->data());
+      cout << "Setting fake efficiency to " << pars.FakeEff << endl;
+      if (pars.FakeEff < 0 || pars.FakeEff > 1)
       {
         argsokay = false;
         break;
       }
     }
+    else if (arg == "-towunc")
+    {
+      if (++parg == arguments.end())
+      {
+        argsokay = false;
+        break;
+      }
+      pars.IntTowScale = atoi(parg->data());
+      pars.fTowScale = 1.0 + pars.IntTowScale * pars.fTowUnc;
+      cout << "Setting tower scale to " << pars.fTowScale << endl;
+      if (pars.IntTowScale < -1 || pars.FakeEff > 1)
+      {
+        argsokay = false;
+        break;
+      }
+    }
+    else if (arg == "-geantnum")
+    {
+      if (++parg == arguments.end())
+      {
+        argsokay = false;
+        break;
+      }
+      if (*parg != "0" && *parg != "1")
+      {
+        argsokay = false;
+        break;
+      }
+      forcedgeantnum = true;
+      pars.UseGeantNumbering = bool(atoi(parg->data()));
+    }
+    else if (arg == "-jetnef")
+    {
+      if (++parg == arguments.end())
+      {
+        argsokay = false;
+        break;
+      }
+      pars.MaxJetNEF = atof(parg->data());
+      cout << "Setting Max Jet NEF to " << pars.MaxJetNEF << endl;
+      if (pars.MaxJetNEF < 0 || pars.MaxJetNEF > 1)
+      {
+        argsokay = false;
+        break;
+      }
+    }
+    else
+    {
+      argsokay = false;
+      break;
+    }
+  }
 
-    if (!argsokay)
+  if (!argsokay)
     {
       cerr << "usage: " << argv[0] << endl
            << " [-o OutFileName]" << endl
@@ -317,7 +320,7 @@ ppTestAnalysis::ppTestAnalysis(const int argc, const char **const argv)
     cout << " intype = " << pars.intype << endl;
     cout << " Writing to " << pars.OutFileName << endl;
     cout << " ----------------------------" << endl;
-  }
+  
 }
 //----------------------------------------------------------------------
 ppTestAnalysis::~ppTestAnalysis()
@@ -401,6 +404,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     eventid = header->GetEventId();
     runid1 = header->GetRunId();
     vz = header->GetPrimaryVertexZ();
+    pttot = 0;
 
     // For GEANT: Need to devise a runid that's unique but also
     // reproducible to match Geant and GeantMc data.
@@ -417,8 +421,6 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     }
 
     break;
-    // =====================================================
-  case INTREE:
   default:
     cerr << "Unknown intype " << pars.intype << endl;
     return EVENTRESULT::PROBLEM;
@@ -443,6 +445,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
       double sv_mass = pid->Mass();
       double E = TMath::Sqrt(sv->P() * sv->P() + sv_mass * sv_mass);
       sv->SetPxPyPzE(sv->Px(), sv->Py(), sv->Pz(), E);
+      pttot += sv->Pt();
     }
 
     //! setting pion mass for charged particles and zero mass for towers
@@ -457,6 +460,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
       double E = TMath::Sqrt(sv->P() * sv->P() + sv_mass * sv_mass);
 
       sv->SetPxPyPzE(sv->Px(), sv->Py(), sv->Pz(), E);
+      pttot += sv->Pt();
     }
 
     // TRACKS
@@ -563,8 +567,8 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     // jet charge
     double numerator = 0.0;
     double kappa = 2.0;
-    double ptne = 0.0;
-    double pttot = 0.0;
+    double jetptne = 0.0;
+    double jetpttot = 0.0;
 
     for (PseudoJet &c : ChargedPart.constituents())
     {
@@ -574,35 +578,27 @@ EVENTRESULT ppTestAnalysis::RunEvent()
 
     for (PseudoJet &n : NeutralPart.constituents())
     {
-      ptne += n.perp();
+      jetptne += n.perp();
     }
 
     for (PseudoJet &part : CurrentJet.constituents())
     {
-      pttot += part.perp();
+      jetpttot += part.perp();
     }
 
     double q = numerator / pow(CurrentJet.perp(), kappa);
 
-    JetAnalysisUserInfo *userinfo = new JetAnalysisUserInfo(q);
+    JetAnalysisUserInfo *userinfo = new JetAnalysisUserInfo();
     // Save neutral energy fraction in multi-purpose field
-    userinfo->SetNumber(ptne / pttot);
+    userinfo->SetNumber(jetptne / jetpttot);
     CurrentJet.set_user_info(userinfo);
 
-    // ue
-    int nue = ptue_arr.size();
-    double ptue = 0;
-    if (nue != 0)
-    {
-      ptue = accumulate(ptue_arr.begin(), ptue_arr.end(), 0.0) / nue;
-    }
-
-    if (pars.MaxJetNEF < 1.0 && ptne / pttot > pars.MaxJetNEF)
+    if (pars.MaxJetNEF < 1.0 && jetptne / jetpttot > pars.MaxJetNEF)
       continue;
 
     // check if the event has high weight
     int reject = 0;
-    if ((pars.InputName.Contains("2_3") && JAResult[0].perp() > 6.0) || (pars.InputName.Contains("3_4") && JAResult[0].perp() > 8.0) || (pars.InputName.Contains("4_5") && JAResult[0].perp() > 10.0) || (pars.InputName.Contains("5_7") && JAResult[0].perp() > 14.0) || (pars.InputName.Contains("7_9") && JAResult[0].perp() > 18.0) || (pars.InputName.Contains("9_11") && JAResult[0].perp() > 22.0) || (pars.InputName.Contains("11_15") && JAResult[0].perp() > 30.0) || (pars.InputName.Contains("15_20") && JAResult[0].perp() > 40.0) || (pars.InputName.Contains("20_25") && JAResult[0].perp() > 50.0) || (pars.InputName.Contains("25_35") && JAResult[0].perp() > 70.0) || (pars.InputName.Contains("35_-1") && JAResult[0].perp() > 1000.0))
+    if ((pars.InputName.Contains("hat23_") && JAResult[0].perp() > 6.0) || (pars.InputName.Contains("hat34_") && JAResult[0].perp() > 8.0) || (pars.InputName.Contains("hat45_") && JAResult[0].perp() > 10.0) || (pars.InputName.Contains("hat57_") && JAResult[0].perp() > 14.0) || (pars.InputName.Contains("hat79_") && JAResult[0].perp() > 18.0) || (pars.InputName.Contains("hat911_") && JAResult[0].perp() > 22.0) || (pars.InputName.Contains("hat1115_") && JAResult[0].perp() > 30.0) || (pars.InputName.Contains("hat1520_") && JAResult[0].perp() > 40.0) || (pars.InputName.Contains("hat2025_") && JAResult[0].perp() > 50.0) || (pars.InputName.Contains("hat2535_") && JAResult[0].perp() > 70.0) || (pars.InputName.Contains("hat3545_") && JAResult[0].perp() > 90.0) || (pars.InputName.Contains("hat4555_") && JAResult[0].perp() > 110.0) || (pars.InputName.Contains("hat55999_") && JAResult[0].perp() > 1000.0))   
     {
       reject = 1;
     }
@@ -610,7 +606,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     {
       reject = 2;
     }
-    Result.push_back(ResultStruct(CurrentJet, SDJet, nch, q, nue, ptue, reject));
+    Result.push_back(ResultStruct(CurrentJet, SDJet, q, reject));
   }
   // By default, sort for original jet pt
   sort(Result.begin(), Result.end(), ResultStruct::origptgreater);
@@ -738,12 +734,15 @@ void TurnOffCuts(std::shared_ptr<TStarJetPicoReader> pReader)
 double LookupRun12Xsec(TString filename)
 {
 
-  const int NUMBEROFPT = 11;
+  const int NUMBEROFPT = 13;
   // const char *PTBINS[NUMBEROFPT]={"2_3","3_4","4_5","5_7","7_9","9_11","11_15","15_20","20_25","25_35","35_-1"};
-  const static float XSEC[NUMBEROFPT] = {9.00581646, 1.461908221, 0.3544350863, 0.1513760388, 0.02488645725, 0.005845846143, 0.002304880181, 0.000342661835, 4.562988397e-05, 9.738041626e-06, 5.019978175e-07};
-  const static float NUMBEROFEVENT[NUMBEROFPT] = {2100295, 600300, 600300, 300289, 300289, 300289, 160295, 100302, 80293, 76303, 23307};
-
-  throw std::runtime_error("Not a valid filename");
+  const static float XSEC[NUMBEROFPT] = {9.0012, 1.46253, 0.354566, 0.151622, 0.0249062, 0.00584527, 0.00230158, 0.000342755, 4.57002e-05, 9.72535e-06, 4.69889e-07, 2.69202e-08, 1.43453e-09};
+  const static float NUMBEROFEVENT[NUMBEROFPT] = {3e6, 3e6, 3e6, 3e6, 3e6, 3e6, 3e6, 3e6, 3e6, 2e6, 2e6, 1e6, 1e6};
+  const static vector<string> vptbins = {"pt-hat23_", "pt-hat34_", "pt-hat45_", "pt-hat57_", "pt-hat79_", "pt-hat911_", "pt-hat1115_", "pt-hat1520_", "pt-hat2025_", "pt-hat2535_", "pt-hat3545_", "pt-hat4555_", "pt-hat55999_"};
+  for (int i = 0; i < vptbins.size(); ++i)
+  {
+    if (filename.Contains(vptbins.at(i).data()))                                                                                           return XSEC[i] / NUMBEROFEVENT[i];
+  }                                                                                                                                                                                                                                                                         throw std::runtime_error("Not a valid filename");
   return -1;
 }
 
