@@ -101,18 +101,12 @@ public :
   // Geant files have messed up runid and event id.
   // Switch for fixing. Should be turned on by default for Geant files, off otherwise.
   bool UseGeantNumbering=false;
-
-
-  // GEANT12 example
-  // ---------------
-  TString InputName = "Data/AddedEmbedPythiaRun12pp200/Cleanpp12Pico_pt25_35_g0.root"; ///< Input name
+  
+  TString InputName = "test.root";
   INTYPE intype = INPICO;             ///< Input type (can be a pico dst, a result tree, an MC tree)
   TString ChainName = "JetTree";      ///< Name of the input chain
-  TString TriggerName = "ppJP2";        ///< Trigger type (All, MB, HT, pp, ppHT, ppJP2, ppJP(careful!))
-
-  // Only putting it here so that it can be initialized in the analysis class and then used
-  TString OutFileName = "TmpResult.root";     ///< Output file
-
+  TString TriggerName = "ppJP2";
+  TString OutFileName = "test.root";
 
 };
 #endif // PPTESTPARAMETERS_HH

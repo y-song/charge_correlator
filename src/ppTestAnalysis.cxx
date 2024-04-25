@@ -364,7 +364,7 @@ bool ppTestAnalysis::InitChains()
   return true;
 }
 //----------------------------------------------------------------------
-// Main routine for one event.
+// Main routine for one event. 
 EVENTRESULT ppTestAnalysis::RunEvent()
 {
   TStarJetVector *sv;
@@ -377,11 +377,18 @@ EVENTRESULT ppTestAnalysis::RunEvent()
   // Reset results (from last event)
   // -------------------------------
   Result.clear();
-  weight = 1;
+  weight = 1.;
   reject = -9;
+  mult = 0;
+  refmult = 0;
+  runid = -(INT_MAX - 1);
+  runid1 = -(INT_MAX - 1);
+  eventid = -(INT_MAX - 1);
+  pttot = 0.;
+  njets = 0;
+  vz = 999;
   particles.clear();
-  // cout << " test " << endl;
-
+  
   switch (pars.intype)
   {
     // =====================================================
@@ -403,7 +410,6 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     eventid = header->GetEventId();
     runid1 = header->GetRunId();
     vz = header->GetPrimaryVertexZ();
-    pttot = 0;
 
     // For GEANT: Need to devise a runid that's unique but also
     // reproducible to match Geant and GeantMc data.
@@ -524,14 +530,14 @@ EVENTRESULT ppTestAnalysis::RunEvent()
   if ((pars.InputName.Contains("hat23_") && JAResult[0].perp() > 6.0) || (pars.InputName.Contains("hat34_") && JAResult[0].perp() > 8.0) || (pars.InputName.Contains("hat45_") && JAResult[0].perp() > 10.0) || (pars.InputName.Contains("hat57_") && JAResult[0].perp() > 14.0) || (pars.InputName.Contains("hat79_") && JAResult[0].perp() > 18.0) || (pars.InputName.Contains("hat911_") && JAResult[0].perp() > 22.0) || (pars.InputName.Contains("hat1115_") && JAResult[0].perp() > 30.0) || (pars.InputName.Contains("hat1520_") && JAResult[0].perp() > 40.0) || (pars.InputName.Contains("hat2025_") && JAResult[0].perp() > 50.0) || (pars.InputName.Contains("hat2535_") && JAResult[0].perp() > 70.0) || (pars.InputName.Contains("hat3545_") && JAResult[0].perp() > 90.0) || (pars.InputName.Contains("hat4555_") && JAResult[0].perp() > 110.0) || (pars.InputName.Contains("hat55999_") && JAResult[0].perp() > 1000.0))   
   {
     reject = 1;
-    return EVENTRESULT::NOJETS;
+    return EVENTRESULT::NOTACCEPTED;
   }
   
-  /*if (abs(vz) > pars.VzCut)
+  if (abs(vz) > pars.VzCut)
   {
     reject = 2;
-    return EVENTRESULT::NOJETS;
-  }*/
+    return EVENTRESULT::NOTACCEPTED;
+  }
 
   reject = 0;
   int njets = JAResult.size();

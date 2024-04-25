@@ -147,11 +147,12 @@ private:
   int runid1;
   float pttot;
   double vz;
-  int highw;
+  //int highw;
   int mult;
-  double refmult = 0;
-  double weight = 0;
+  double refmult;
+  double weight;
   int reject;
+  int njets;
 
   JetAnalyzer *pJA = 0;
 
@@ -205,8 +206,6 @@ public:
 
   /// Get the vz of the current event
   inline double GetVz() { return vz; };
-
-  //inline double CheckHighW() { return highw; };
 
   inline int GetEventMult() { return mult; };
 

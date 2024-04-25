@@ -236,6 +236,7 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
 	{
 	    continue;
 	}
+	//cout << mcpttot << endl;
 	if (abs(mcvz) > 30)
 	{
 	    continue;
@@ -259,34 +260,23 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
 
         int ppevi = PpChain->GetEntryNumberWithIndex(mcrunid, mceventid);
         PpChain->GetEntry(ppevi);
-
-        if (rcreject > 0)
-        {
-            continue; // go to next MC event
-        }
-	if (abs(ppvz) > 30)
-	{
-	    continue;
-	}
-	if (pppt_list.find(pppttot) != pppt_list.end())
-	{
-	    continue;
-	}
-	else
-        {
-            pppt_list.insert(pppttot);
-        }
-
 	vector<RootResultStruct> ppresult;
 
-        for (int j = 0; j < ppnjets; ++j)
-        {
-            TStarJetVectorJet *ppjet = (TStarJetVectorJet *)PpJets->At(j);
-    
-            if (ppevi >= 0) // detector-level event passes event cuts
-            {
-           	ppresult.push_back(RootResultStruct(*ppjet, ppjet->Pt(), ppjet->Eta(), ppjet->Rapidity(), ppjet->Phi(), ppjet->M(), rcn[j], rcq[j], rcrg[j], rczg[j], rcmg[j], rcnef[j], ppweight, rcreject, mcEvi, rcmult, ppvz));
-	    }
+	if (ppevi >= 0)
+	{
+		if (rcreject > 0)  continue; // go to next MC event
+        	if (abs(ppvz) > 30)  continue;
+		if (pppt_list.find(pppttot) != pppt_list.end())	continue;
+		else
+        	{
+            		pppt_list.insert(pppttot);
+        	}
+
+        	for (int j = 0; j < ppnjets; ++j)
+        	{
+            		TStarJetVectorJet *ppjet = (TStarJetVectorJet *)PpJets->At(j); 
+           		ppresult.push_back(RootResultStruct(*ppjet, ppjet->Pt(), ppjet->Eta(), ppjet->Rapidity(), ppjet->Phi(), ppjet->M(), rcn[j], rcq[j], rcrg[j], rczg[j], rcmg[j], rcnef[j], ppweight, rcreject, mcEvi, rcmult, ppvz));
+	    	}
 	} // end of ppjet loop
 
         //! Sort them together
@@ -330,7 +320,7 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
         }
         for (vector<RootResultStruct>::iterator ppit = ppresult.begin(); ppit != ppresult.end();) // fakes
         {
-           MatchedResult.push_back(MatchedRootResultStruct(RootResultStruct(*dummyjet, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, mcweight, mcreject, mcEvi, mcmult, mcvz), *ppit));
+            MatchedResult.push_back(MatchedRootResultStruct(RootResultStruct(*dummyjet, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, mcweight, mcreject, mcEvi, mcmult, mcvz), *ppit));
             ++ppit;
         }
         

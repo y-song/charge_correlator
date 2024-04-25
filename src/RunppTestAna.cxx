@@ -85,13 +85,9 @@ int main(int argc, const char **argv)
     pReader->AddMaskedRuns(badruns);
   }
 
-  // Files and histograms
+  // File
   // --------------------
   TFile *fout = new TFile(pars.OutFileName, "RECREATE");
-
-  TH1::SetDefaultSumw2(true);
-  TH2::SetDefaultSumw2(true);
-  TH3::SetDefaultSumw2(true);
 
   // Save results
   // ------------
@@ -104,21 +100,19 @@ int main(int argc, const char **argv)
   ResultTree->Branch("runid1", &runid1, "runid1/I");
   int eventid;
   ResultTree->Branch("eventid", &eventid, "eventid/I");
-  double weight = 1;
+  double weight;
   ResultTree->Branch("weight", &weight, "weight/D");
   double refmult;
   ResultTree->Branch("refmult", &refmult, "refmult/D");
-  int njets = 0;
+  int njets;
   ResultTree->Branch("njets", &njets, "njets/I");
   double vz;
   ResultTree->Branch("vz", &vz, "vz/D");
-  //int highw;
-  //ResultTree->Branch("highw", &highw, "highw/I");
   int mult;
   ResultTree->Branch("mult", &mult, "mult/I");
   float pttot;
   ResultTree->Branch("pttot", &pttot, "pttot/F");
-  int reject = -9;
+  int reject;
   ResultTree->Branch("reject", &reject, "reject/I");
 
   TClonesArray Jets("TStarJetVectorJet");
@@ -156,11 +150,11 @@ int main(int argc, const char **argv)
     {
 
       Jets.Clear();
-      refmult = 0;
-      runid = -(INT_MAX - 1);
-      eventid = -(INT_MAX - 1);
-
-      EVENTRESULT ret = ppana->RunEvent();
+      //refmult = 0;
+      //runid = -(INT_MAX - 1);
+      //eventid = -(INT_MAX - 1);
+      
+      EVENTRESULT ret = ppana->RunEvent(); // event observables reset here
 
       // Understand what happened in the event
       switch (ret)
@@ -195,6 +189,7 @@ int main(int argc, const char **argv)
 
       // Now we can pull out details and results
       // ---------------------------------------
+      
       weight = ppana->GetEventWeight();
       refmult = ppana->GetRefmult();
       runid = ppana->GetRunid();
@@ -205,15 +200,17 @@ int main(int argc, const char **argv)
       mult = ppana->GetEventMult();
       pttot = ppana->GetPttot();
       reject = ppana->GetRejectCode();
-     
+      
       vector<ResultStruct> Result = ppana->GetResult();
       njets = Result.size();
-      int ijet = 0;
+
       if (njets == 0)
       {
         ResultTree->Fill();
         continue;
       }
+
+      int ijet = 0;
       for (auto &gr : Result)
       {
 
