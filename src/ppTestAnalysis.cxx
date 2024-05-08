@@ -336,7 +336,6 @@ bool ppTestAnalysis::InitChains()
 {
 
   // For trees of TStarJetVector
-  // (like a previous result)
   // ------------------------
   Events = new TChain(pars.ChainName);
   Events->Add(pars.InputName);
@@ -378,7 +377,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
   // -------------------------------
   Result.clear();
   weight = 1.;
-  reject = -9;
+  reject = 0;
   mult = 0;
   refmult = 0;
   runid = -(INT_MAX - 1);
@@ -429,6 +428,27 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     cerr << "Unknown intype " << pars.intype << endl;
     return EVENTRESULT::PROBLEM;
   }
+
+  /*if (abs(vz) > 30)
+  {
+    reject = 2;
+    return EVENTRESULT::NOTACCEPTED;
+  }
+
+  switch (pars.intype)
+  {
+  case MCPICO:
+      break;
+  case INPICO:
+      if (not triggered)
+      {
+           return EVENTRESULT::NOTACCEPTED;
+      }
+      break;
+  default:
+    cerr << "Unknown intype " << pars.intype << endl;
+    return EVENTRESULT::PROBLEM;
+  }*/
 
   // Fill particle container
   // -----------------------
@@ -533,13 +553,6 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     return EVENTRESULT::NOTACCEPTED;
   }
   
-  if (abs(vz) > pars.VzCut)
-  {
-    reject = 2;
-    return EVENTRESULT::NOTACCEPTED;
-  }
-
-  reject = 0;
   int njets = JAResult.size();
 
   fastjet::contrib::SoftDrop sd(0, 0.1);
