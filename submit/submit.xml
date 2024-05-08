@@ -18,7 +18,7 @@
   <SandBox>
     <Package>
       <File>file:./bin/RunppTestAna</File>
-      <File>file:./raw_data.list</File>
+      <File>file:./raw_data_short.list</File>
       <File>file:./runimage.sh</File>
       <File>file:./star_star.simg</File>
       <File>file:./container.sh</File>

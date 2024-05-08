@@ -219,7 +219,8 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
     int N = McChain->GetEntries();
     cout << "Number of Pythia events: " << N << endl;
     cout << "Number of Geant events:  " << PpChain->GetEntries() << endl;
-    McChain->GetEntry(0); // this event contains a truth jet
+    //McChain->GetEntry(0); // this event contains a truth jet
+    McChain->GetEntry(2); // for small sample QA, this event contains a truth jet
     TStarJetVectorJet *dummyjet = (TStarJetVectorJet *)McJets->At(0);
 
     set<float> mcpt_list;
@@ -236,7 +237,6 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
 	{
 	    continue;
 	}
-	//cout << mcpttot << endl;
 	if (abs(mcvz) > 30)
 	{
 	    continue;

@@ -1,4 +1,4 @@
-This README explains my entire workflow for this analysis. Step-by-step instructions for running on a small test sample are coming soon. Please contact me via youqi.song@yale.edu for any questions or comments.
+This README explains my entire workflow for this analysis. To run the code in your directory, remember to change all the occurrences of `/gpfs01/star/pwg/youqi` to your own directories. Please contact me via youqi.song@yale.edu for any questions or comments.
 
 Files are imported from `/gpfs01/star/pwg/youqi/run12/final`
 
@@ -21,6 +21,8 @@ Job submission: The directory I use for job submission is `submit/` under my wor
 5. Submit jobs via `python submit/submit.py`
 6. Enter the container again to hadd the output files `out_sum*.root` to `data.root`
 
+For code QA person: Create a directory called `results/data` (this is specified in the `-o` option in `container.sh`). Edit `raw_data.list` to keep only the first row, so that you only run over `sum0.root` instead of the list of 10, and then you can follow steps 0-5 above. Your output file should show up as `results/data/out_sum0.root`. This file should be identical to the one I have in my directory (`/gpfs01/star/pwg/youqi/run12/final/results/data/out_sum0.root`).
+
 ## Embedding trees
 
 TStarJetPicos: Embedding trees are also in the form of TStarJetPicos, and are located at `/gpfs01/star/pwg/youqi/run12/embedding/P12id/picos/pp2012embed_2023/out`. The scripts for generating these trees from mini MCs and MuDSTs are in `/gpfs01/star/pwg/youqi/TStarJetPicoMaker` and instructions for running these scripts are in `MiniMcsToTStarJetPicos.txt`. The directory is copied from `/star/u/imooney/TStarJetPicoMaker`, except that the lists in `list_ppLargeStats/` have been modified with `remove_badruns.ipynb`.
@@ -34,19 +36,30 @@ Run code:
 4. Create detector-level trees by running `./run_genat_analysis_new.sh`. Hadd the output files in `results/geant/` to a signle file `geant.root`
 
 Match detector-level jets to particle-level and remove bad events:
-5. Run `root -l MatchGeantToPythia.cxx+("pythia.root", "geant.root", "matched.root")`
+5. Run `root -l 'MatchGeantToPythia.cxx+("pythia.root", "geant.root", "matched.root")'`
+ 
+For code QA person: Create directories `results/pythia`, `results/geant`, and `results/matched`. Edit `run_pythia_analysis.sh` and `run_geant_analysis_new.sh` by replacing `geant_new.list` with `geant_short.list`, and then you can follow steps 1-5 above. Your output file show up as `results/matched/matched.root`. This file should be identical to what I have: `/gpfs01/star/pwg/youqi/run12/final/results/matched/matched.root`.
 
-# Run MultiFold
+#  Run MultiFold
 
-conda environment: MultiFold is done on Yale's computing cluster Grace. I created a conda environment called "my_env_2" that includes the dependencies needed. Relevant code is copied to `/gpfs01/star/pwg/youqi/run12/final/multifold/`. `environment.yml` contains information about this conda environment. A lot of these packages are installed automatically. The packages that I manually installed and are needed are: matplotlib, numpy, pandas, python, and uproot.
+conda environment: MultiFold is done on Yale's computing cluster Grace. I created a conda environment called "my_env_2" that includes the dependencies needed. Relevant code is copied to `/gpfs01/star/pwg/youqi/run12/final/multifold/`. Within it, there is `environment.yml` which contains information about this conda environment. (Perhaps delete the following sentence: A lot of these packages are installed automatically. The packages that I manually installed and are needed are: matplotlib, numpy, pandas, python, and uproot).
 
 Other packages: Tensorflow and energyflow are installed with pip. See instructions from https://www.tensorflow.org/install/pip and https://energyflow.network/installation/#install-via-pip.
 
-Enter the conda environment:
-1. Do `module load miniconda` and `conda activate my_env_2`
+Now, since code QA person needs to run my code on RCF, I tried the following to recreate the conda environment I have on Grace. However, the packages installed via `pip` by default will be the newest versions, while the packages I have on Grace are not.
 
-Job submission: On Grace, job submission is done with Slurm. `submit.sh` creates a directory for each seed, and runs `multifold.py` for each in their individual directory. `submit_all.sh` runs `submit.sh` for all the seeds with a for loop.
-2. Do `sbatch submit_all.sh`
+Install software:
+0.1 Install miniconda on RCF, following the instructions for Linux on https://docs.anaconda.com/free/miniconda/. Check that the installation is successful via `conda list`.
+0.2 Recreate my conda environment via `conda env create -n my_env_2 -f environment.yml`. Enter the conda environment via `conda activate my_env_2`.
+0.3 Install tensorflow on RCF: `python -m pip install tensorflow`. See instructions from https://www.tensorflow.org/install/pip
+0.4 Install energyflow on RCF `pip install energyflow`. See instructions from https://energyflow.network/installation/#install-via-pip
+ 
+MultiFold code: `multifold.py` is what I ran for my analysis. `multifold_test.py` has adjusted parameters for faster running for code QA, and accomodates some requirements by the newer version of tensorflow. 
+
+Run MultiFold:
+1. Do `cd /gpfs01/star/pwg/youqi/run12/final/multifold`. Edit Line 202 of `multifold_test.py` to put in a directory that you would like to save the output to.
+2. Do `python3 multifold_test.py 0`
+3. After MultiFold is done, you should be able to find `jet_noweight.csv`, `it1_seed0.csv`, `it2_seed0.csv`, `it3_seed0.csv`, `it4_seed0.csv`, and `it5_seed0.csv` in the directory that you specified in Line 202. Please let me know if these files are identical to the ones at `/gpfs01/star/pwg/youqi/run12/final/results/multifold_output`.
 
 # Make plots with output from MultiFold
 

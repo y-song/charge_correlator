@@ -12,6 +12,7 @@ import uproot
 import tensorrt
 import energyflow as ef
 import tensorflow as tf
+from energyflow import archs
 
 print('Number of arguments:', len(sys.argv), 'arguments')
 print('Seed:', sys.argv[1])
@@ -121,9 +122,9 @@ def to_categorical(labels, num_classes=None):
     return categorical
 
 # prepare dataframe for PYTHIA6+embedding
-observables2 = ['pt','m','q2','rg','zg','mg','w','reject']
-observabless2 = ['pts','ms','q2s','rgs','zgs','mgs','ws','rejects']
-embed_file = '/gpfs01/star/pwg/youqi/run12/final/Results/matched/matched.root'
+observables2 = ['pt','m','q','rg','zg','mg','w','reject']
+observabless2 = ['pts','ms','qs','rgs','zgs','mgs','ws','rejects']
+embed_file = '/gpfs01/star/pwg/youqi/run12/final/results/matched/matched.root'
 df1 = applyCut(getData(observables2+observabless2, embed_file, 'MatchedTree'), 'reject<=0 and rejects<=0 and rg>0 and rgs>0 and w<5e-10 and pts>15 and ms>1')
 df1 = df1.rename(columns={"q2": "q", "q2s": "qs"})
 df1['relw_new'] = np.asarray(df1['w'])/max(df1['w'])
@@ -131,7 +132,7 @@ df1['relw_new'] = np.asarray(df1['w'])/max(df1['w'])
 # prepare dataframe for data
 observables1 = ['pt','m','q','rg','zg','mg']
 observabless1 = ['pts','ms','qs','rgs','zgs','mgs']
-data_file = uproot.open('/gpfs01/star/pwg/youqi/run12/final/Results/data/data.root')
+data_file = uproot.open('/gpfs01/star/pwg/youqi/run12/final/results/data/data.root')
 tree = data_file["ResultTree"].arrays(observables1, library='np')
 df_data = pd.DataFrame(np.transpose(np.array((np.concatenate(tree['pt']), np.concatenate(tree['m']), np.concatenate(tree['q']), np.concatenate(tree['rg']), np.concatenate(tree['zg']), np.concatenate(tree['mg'])))), columns=observabless1)
 df2 = applyCut(df_data, 'rgs > 0')
@@ -199,7 +200,7 @@ tf.config.list_physical_devices('GPU')
 multifold_ws,history = omnifold(X_gen, Y_gen, X_det, Y_det, wdata, winit, (ef.archs.DNN, det_args), (ef.archs.DNN, mc_args), fitargs1, fitargs2, val=0.2, it=itnum, trw_ind=-2, weights_filename=str(seed))
 
 # save results
-output_path='/gpfs01/star/pwg/youqi/run12/final/Results/multifold_output/'
+output_path='/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/'
 if (os.path.isfile("jet_noweight.csv")==False):
     df3 = df1[obs_multifold]
     df3.to_csv(output_path+'jet_noweight.csv',index=False)
