@@ -33,6 +33,7 @@ TStarJetPicos: Embedding trees are also in the form of TStarJetPicos, and are lo
 0. Create output directories: `results/pythia`, `results/geant` and `results/matched`.
 
 Turn off cut on vz (This is because we don't want to reduce efficiency due to high |vz|. We will remove events with bad vz later with the script that does matching between particle-level and detector-level):
+
 1. In `src/ppTestParameters.hh`, change `double VzCut = 30` to `double VzCut = 999`.
 
 Run code:
@@ -59,6 +60,7 @@ For code QA person: Your output file would show up as `results/matched/matched.r
 #  Run MultiFold
 
 Install software:
+
 0.1 Install miniconda on RACF, following the instructions for Linux on https://docs.anaconda.com/free/miniconda/. Check that the installation is successful via `conda list`.
 0.2 Recreate conda environment via `conda env create -n my_env_2 -f environment.yml`. Enter the conda environment via `conda activate my_env_2`.
 0.3 Install tensorflow on RACF: `python -m pip install tensorflow`. See instructions from https://www.tensorflow.org/install/pip
