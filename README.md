@@ -35,6 +35,7 @@ Turn off cut on vz (This is because we don't want to reduce efficiency due to hi
 1. In `src/ppTestParameters.hh`, change `double VzCut = 30` to `double VzCut = 999`.
 
 Run code:
+
 2. Enter the container and compile by following steps 1-3 of data trees procedure. Don't exit the container afterwards.
 3. Create particle-level trees by running `./run_pythia_analysis.sh`. Hadd the output files in `results/pythia/` to a single file `pythia.root`
 4. Create detector-level trees by running `./run_genat_analysis_new.sh`. Hadd the output files in `results/geant/` to a signle file `geant.root`
