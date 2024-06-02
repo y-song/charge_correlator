@@ -2,6 +2,10 @@ bin/
 results/
 src/obj/
 raw_data/
+plot/*png
+plot/__pycache__/
+multifold/poisson/
+submit/scheduler/
 star_star.simg
 *.d
 *.so
