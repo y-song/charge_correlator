@@ -18,6 +18,7 @@ Compiling the code: For some reason that I don't understand, even though I have 
 Job submission: The directory I use for job submission is `submit/` under my work directory. Inside the directory there is `submit.py` and `submit.xml`:
 `submit/submit.py` - I have a for loop that loops over all the files in the file list `raw_data.list` (short list for code QA: `raw_data_short.list`). One job will be submitted for each iteration of the loop. In each loop, I defined a string "submit_args" which contains arguments "out", "log", "data_file", and they will be passed to `submit/submit.xml`
 `submit/submit.xml` - Line 5 allows us to enter the singularity container. This is the equivalent of `source runimage.sh` when I run the code interactively. The options -B are directories that we want to be visible inside the container. It calls `container.sh` with singularity and reads the arguments "out", "log", and "data_file". "data_file" will then be passed to `container.sh`. I included the all TStarJetPicos data in the SandBox, which is not the best way of doing it but makes my life easier.
+
 5. Create a folder for output via `mkdir results/data` (this is specified in the `-o` option in `container.sh`). 
 6. Submit jobs via `python submit/submit.py`
 7. Enter the container again to hadd the output files `out_sum*.root` to `data.root`
@@ -39,6 +40,7 @@ Run code:
 4. Create detector-level trees by running `./run_genat_analysis_new.sh`. Hadd the output files in `results/geant/` to a signle file `geant.root`
 
 Match detector-level jets to particle-level and remove bad events:
+
 5. Run `root -l 'MatchGeantToPythia.cxx+("pythia.root", "geant.root", "matched.root")'`
 
 For code QA person: Your output file would show up as `results/matched/matched.root`. This file should be identical to `/gpfs01/star/pwg/youqi/run12/final/results/matched/matched.root`.
