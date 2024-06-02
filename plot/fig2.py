@@ -1,5 +1,6 @@
 import math
 import matplotlib
+matplotlib.use('Agg')
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -21,14 +22,13 @@ rgedges=np.arange(0.,0.45,0.05)
 zgedges=np.arange(0.1,0.55,0.05)
 
 # set parameters
-path = '/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/'
+path = '/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/nominal/'
 cut = '20<pt<30 and rg!=-1'
 it = 5
 
 # create an array of DataFrames for unfolded matched jets
 df2s = []
-for i in [0]:
-#for i in range(1,21):
+for i in range(0,6):
     df_temp = pd.read_csv(path+'jet_noweight.csv', low_memory=False)
     df_temp.eval('a=(m*m-mg*mg)/(pt*pt)',inplace=True)
     df_temp['weight'] = pd.read_csv(path+'it'+str(it)+'_seed'+str(i)+'.csv', low_memory=False)

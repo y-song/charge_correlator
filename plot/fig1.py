@@ -1,4 +1,5 @@
 import matplotlib
+matplotlib.use('Agg')
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -15,7 +16,7 @@ def getEff(pythiaFile, pythiaCuts):
 
 def getFull(effFile, pythiaCuts, ofCsvPath, ofCuts, it, nom=False, filelist=None):
     if filelist is None:
-        filelist = np.arange(1,21)
+        filelist = np.arange(0,6)
     df2s = []
     for i in filelist:
         df_temp = pd.read_csv(ofCsvPath+'jet_noweight.csv', low_memory=False)
@@ -42,9 +43,9 @@ def getFull(effFile, pythiaCuts, ofCsvPath, ofCuts, it, nom=False, filelist=None
         err_seed = y_err/(np.sqrt(len(filelist))) # use standard error
     return y, err_seed
 
-def getFullStat(effFile, pythiaCuts, ofCsvPath, ofCuts, it, nom=False, filelist=None):
+def getFullStat(effFile, pythiaCuts, ofCsvPath, ofCuts, it, filelist=None):
     if filelist is None:
-        filelist = np.arange(1,201)
+        filelist = np.arange(0,10)
     df2s = []
     for i in filelist:
         df_temp = pd.read_csv(ofCsvPath+'jet_noweight.csv', low_memory=False)
@@ -137,38 +138,49 @@ df_py8 = applyCut(df_py8, cut)
 y_py8_truth, err_py8_truth = calc_hist(df_py8[ob], bins=np.arange(range_low, range_high+binwidth_mc, binwidth_mc), weights=df_py8['w'], density=True)[:2]
 
 # set paths to read MultiFold output from
-nom_path = '/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/'
-hw_path = ''
-py8_path = ''
-stat_path = ''
+nom_path = '/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/nominal/'
+hadcorr_path = '/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/hadcorr05/'
+tow_path = '/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/tow104/'
+eff_path = '/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/eff096/'
+hw_path = '/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/herwig/'
+py8_path = '/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/pythia8/'
+stat_path = '/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/statistic/'
 
 # calculate y-values for nominal and systematic uncertainty variations
 y_nom, err_seed = getFull('/gpfs01/star/pwg/youqi/run12/final/results/matched/matched.root',
     'rg!=-1 and reject<=0 and rejects<=0 and '+cut,
-    nom_path, cut, it_mean, nom=True, filelist=['0'])
-#y_hw, err_seed_hw = getFull('/gpfs01/star/pwg/youqi/run12/final/results/matched/matched.root',
-#    'rg!=-1 and reject<=0 and rejects<=0 and '+cut,
-#    hw_path, cut, it_mean, nom=True)
-#y_p8, err_seed_p8 = getFull('/gpfs01/star/pwg/youqi/run12/final/results/matched/matched.root',
-#    'rg!=-1 and reject<=0 and rejects<=0 and '+cut,
-#    py8_path, cut, it_mean, nom=True)
-#y_stat, err_stat = getFullStat('/gpfs01/star/pwg/youqi/run12/final/results/matched/matched.root',
-#    'rg!=-1 and reject<=0 and rejects<=0 and '+cut,
-#    stat_path, cut, it_mean, nom=True)
-
-# use relative uncertainties from 2015 embedding
-rel_err1 = np.array([0,0,0, 0.01326951, 0.01107723, 0.00655016, 0.00229533, 0.00187876, 0.00145917, 0.00172876, 0.00391525, 0.00878632, 0.01316953,0,0,0])
-rel_err2 = np.array([0,0,0, 0.0106145 , 0.01252629, 0.00582552, 0.00255784, 0.00257672, 0.00199461, 0.00248491, 0.00473744, 0.02353423, 0.00956913,0,0,0])
-rel_err3 = np.array([0,0,0, 0.00766702, 0.01111538, 0.00519714, 0.00282691, 0.00205023, 0.00147707, 0.0025519 , 0.00524755, 0.00999809,0.01535578,0,0,0])
+    nom_path, cut, it_mean, nom=True)
+y_hadcorr = getFull('/gpfs01/star/pwg/youqi/run12/final/results/matched/matched_hadcorr05.root',
+    'rg!=-1 and reject<=0 and rejects<=0 and '+cut,
+    hadcorr_path, cut, it_mean)[0]
+y_tow = getFull('/gpfs01/star/pwg/youqi/run12/final/results/matched/matched_tow104.root',
+    'rg!=-1 and reject<=0 and rejects<=0 and '+cut,
+    tow_path, cut, it_mean)[0]
+y_eff = getFull('/gpfs01/star/pwg/youqi/run12/final/results/matched/matched_eff096.root',
+    'rg!=-1 and reject<=0 and rejects<=0 and '+cut,
+    eff_path, cut, it_mean)[0]
+y_hw = getFull('/gpfs01/star/pwg/youqi/run12/final/results/matched/matched.root',
+    'rg!=-1 and reject<=0 and rejects<=0 and '+cut,
+    hw_path, cut, it_mean)[0]
+y_p8 = getFull('/gpfs01/star/pwg/youqi/run12/final/results/matched/matched.root',
+    'rg!=-1 and reject<=0 and rejects<=0 and '+cut,
+    py8_path, cut, it_mean)[0]
+err_stat = getFullStat('/gpfs01/star/pwg/youqi/run12/final/results/matched/matched.root',
+    'rg!=-1 and reject<=0 and rejects<=0 and '+cut,
+    stat_path, cut, it_mean)
 
 # calculate systematic uncertainties
-#err4 = abs(np.array(y_nom/sum(y_nom))-np.array(y_hw/sum(y_hw)))
-#err5 = abs(np.array(y_nom/sum(y_nom))-np.array(y_p8/sum(y_p8)))
-#err6 = err_seed/sum(y_nom)
-#err_unf = []
-#for i in range(0,len(err4)):
-#    err_unf.append( np.sqrt( (max(abs(err4[i]),abs(err5[i])))**2 + (err6[i])**2 ) )
-#err_unf = np.array(err_unf)
+err1 = abs(np.array(y_nom/sum(y_nom))-np.array(y_hadcorr/sum(y_hadcorr)))
+err2 = abs(np.array(y_nom/sum(y_nom))-np.array(y_tow/sum(y_tow)))
+err3 = abs(np.array(y_nom/sum(y_nom))-np.array(y_eff/sum(y_eff)))
+err4 = abs(np.array(y_nom/sum(y_nom))-np.array(y_hw/sum(y_hw)))
+err5 = abs(np.array(y_nom/sum(y_nom))-np.array(y_p8/sum(y_p8)))
+err6 = err_seed/sum(y_nom)
+err_unf = []
+for i in range(0,len(err4)):
+    err_unf.append( np.sqrt( (max(abs(err4[i]),abs(err5[i])))**2 + (err6[i])**2 ) )
+err_unf = np.array(err_unf)
+err_sys = np.sqrt( err1**2 + err2**2 + err3**2 + err_unf**2 )
 
 # set values for theory curves
 x_theory = np.arange(-4,0.,0.1)
@@ -184,15 +196,14 @@ yerr = abs(y_theory - y_theory_low)
 
 # make fig 1
 fig, ax = plt.subplots()
-#plt.errorbar(x, 4*y_nom/sum(y_nom), yerr=4*err_stat, capsize=3, color='darkred', markersize=11, ls='none')
+plt.errorbar(x, 4*y_nom/sum(y_nom), yerr=4*err_stat, capsize=3, color='darkred', markersize=11, ls='none')
 line1, = plt.plot(x, 4*y_nom/sum(y_nom), label='STAR data', color='r', marker='*', markersize=11, ls='none')
-#line2 = plt.fill_between(x, 4*(y_nom/sum(y_nom)-err_unf), 4*(y_nom/sum(y_nom)+err_unf), color='r', alpha=0.15, label='Unfolding sys.\n(seed+prior)')
-#l1 = ax.legend(handles=[line1,line2], frameon=False, loc='upper left', fontsize=12)
-l1 = ax.legend(handles=[line1], frameon=False, loc='upper left', fontsize=12)
+line2 = plt.fill_between(x, 4*(y_nom/sum(y_nom)-err_sys), 4*(y_nom/sum(y_nom)+err_sys), color='r', alpha=0.15, label='Sys. Unc.')
+l1 = ax.legend(handles=[line1,line2], frameon=False, loc='upper left', fontsize=12)
 ax.add_artist(l1)
-line3 = plt.errorbar(x_mc, 8*y_hw_truth/sum(y_hw_truth), yerr=8*err_hw_truth/sum(y_hw_truth), label='HERWIG', color='g', linestyle='--')
-line4 = plt.errorbar(x_mc, 8*y_nom_truth/sum(y_nom_truth), yerr=8*err_nom_truth/sum(y_nom_truth), label='PYTHIA6', color='b', linestyle='--')
-line5 = plt.errorbar(x_mc, 8*y_py8_truth/sum(y_py8_truth), yerr=8*err_py8_truth/sum(y_py8_truth), label='PYTHIA8', color='k', linestyle='--')
+line3 = plt.errorbar(x_mc, 8*y_hw_truth/sum(y_hw_truth), yerr=8*err_hw_truth/sum(y_hw_truth), label='HERWIG7 7.2 Default', color='g', linestyle='--')
+line4 = plt.errorbar(x_mc, 8*y_nom_truth/sum(y_nom_truth), yerr=8*err_nom_truth/sum(y_nom_truth), label='PYTHIA6 STAR tune', color='b', linestyle='--')
+line5 = plt.errorbar(x_mc, 8*y_py8_truth/sum(y_py8_truth), yerr=8*err_py8_truth/sum(y_py8_truth), label='PYTHIA8 Detroit tune', color='k', linestyle='--')
 line6 = plt.fill_between(x_theory, y_theory_high, y_theory_low, label='NLL SCET parton', color='purple', alpha=0.15)
 ax.legend(handles=[line6], frameon=False, loc='upper right', fontsize=12)
 plt.text(-1.75, 1,'$20<p_T<30$ GeV/c', fontsize=15)
@@ -201,3 +212,19 @@ plt.ylabel(r'$1/N_{\mathrm{jet}}$ $d\log_{10}(N_{\mathrm{jet}})/d\log_{10}(a)$',
 plt.xlim(-3.5,-0.5)
 plt.ylim(0,1.7)
 plt.savefig('fig1.png', bbox_inches='tight')
+
+plt.cla()
+plt.plot(x[2:-2], (err_stat/y_nom)[2:-2], color='k', label='statistical')
+plt.plot(x[2:-2], (err1/y_nom)[2:-2], '--', label='hadronic correction')
+plt.plot(x[2:-2], (err2/y_nom)[2:-2], '--', label='tower scale')
+plt.plot(x[2:-2], (err3/y_nom)[2:-2], '--', label='tracking uncertainty')
+plt.plot(x[2:-2], (err4/y_nom)[2:-2], '--', label='Herwig')
+plt.plot(x[2:-2], (err5/y_nom)[2:-2], '--', label='Pythia8')
+plt.plot(x[2:-2], (err6/y_nom)[2:-2], '--', label='unfolding seed')
+plt.ylabel('relative uncertainty')
+plt.xlabel('$\log(a)$')
+plt.legend(frameon=False, fontsize=10, loc='center left')
+plt.text(-3.4,0.6,'$20<p_T<30$ GeV/c', fontsize=15)
+plt.xlim(left=-3.5, right=-0.5)
+plt.ylim(0,0.7)
+plt.savefig('fig1_unc.png', bbox_inches='tight')

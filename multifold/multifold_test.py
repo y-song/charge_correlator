@@ -199,7 +199,7 @@ tf.config.list_physical_devices('GPU')
 multifold_ws,history = omnifold(X_gen, Y_gen, X_det, Y_det, wdata, winit, (ef.archs.DNN, det_args), (ef.archs.DNN, mc_args), fitargs1, fitargs2, val=0.2, it=itnum, trw_ind=-2, weights_filename=str(seed))
 
 # save results
-output_path='/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/'
+output_path='/gpfs01/star/pwg/youqi/run12/final/results/multifold_output/nominal/'
 if (os.path.isfile("jet_noweight.csv")==False):
     df3 = df1[obs_multifold]
     df3.to_csv(output_path+'jet_noweight.csv',index=False)
