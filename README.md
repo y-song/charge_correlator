@@ -9,6 +9,7 @@ Files are imported from `/gpfs01/star/pwg/youqi/run12/final` on RACF.
 TStarJetPicos: The data used in this analysis are TStarJetPicos, which I have copied to the `raw_data/` folder under my work directory. For more information on TStarJetPicos, including how to produce them, see https://www.star.bnl.gov/cgi-bin/protected/cvsweb.cgi/offline/paper/psn0647/. psn0647, psn0718 and psn0743 also run on TStarJetPicos.
 
 Compiling the code: For some reason that I don't understand, even though I have included `make` in `container.sh` in line 6, I need to compile the code before doing job submissions:
+
 0. Pull the singularity container via `singularity pull --name star_test.simg docker://rkunnawa/star_user:latest`. Rename `star_test.simg` to `star_star.simg`.
 1. Enter the singularity container by `source runimage.sh`
 2. Once inside the container, do `source setup.sh`
