@@ -53,7 +53,7 @@ using namespace contrib;
 #include <algorithm>
 
 double LookupRun12Xsec(TString filename);
-
+double LookupRun12XsecNew(TString filename);
 /*
    For sorting with a different key
 */
