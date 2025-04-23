@@ -288,14 +288,14 @@ ppTestAnalysis::ppTestAnalysis(const int argc, const char **const argv)
     // -----------------------
     select_jet_eta = SelectorAbsEtaMax(EtaJetCut);
     select_jet_pt = SelectorPtRange(pars.PtJetMin, pars.PtJetMax);
-    select_jet_m = SelectorMassMin(pars.MJetMin);
+    //select_jet_m = SelectorMassMin(pars.MJetMin);
     if (pars.intype == MCPICO)
     {
       select_jet = select_jet_eta * select_jet_pt;
     }
     if (pars.intype == INPICO)
     {
-      select_jet = select_jet_eta * select_jet_pt * select_jet_m;
+      select_jet = select_jet_eta * select_jet_pt; //* select_jet_m;
     }
 
     // Repeat on subjets?
@@ -402,7 +402,6 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     pReader->PrintStatus(10);
 
     pFullEvent = pReader->GetOutputContainer()->GetArray();
-
     header = pReader->GetEvent()->GetHeader();
 
     refmult = header->GetProperReferenceMultiplicity();
@@ -522,12 +521,22 @@ EVENTRESULT ppTestAnalysis::RunEvent()
   if (pars.InputName.Contains("pt-hat"))
   {
     TString currentfile = pReader->GetInputChain()->GetCurrentFile()->GetName();
+    weight = LookupRun12XsecNew(currentfile);
+    if (fabs(weight - 1) < 1e-4)
+    {
+      throw std::runtime_error("mcweight unchanged!");
+    }
+  }
+  else if (pars.InputName.Contains("Clean"))
+  {
+    TString currentfile = pReader->GetInputChain()->GetCurrentFile()->GetName();
     weight = LookupRun12Xsec(currentfile);
     if (fabs(weight - 1) < 1e-4)
     {
       throw std::runtime_error("mcweight unchanged!");
     }
   }
+ 
 
   // Run analysis
   // ------------
@@ -546,13 +555,18 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     return EVENTRESULT::NOJETS;
   }
 
-  // check if the event has high weight or large |vz|
+  // check if the event has high weight
   if ((pars.InputName.Contains("hat23_") && JAResult[0].perp() > 6.0) || (pars.InputName.Contains("hat34_") && JAResult[0].perp() > 8.0) || (pars.InputName.Contains("hat45_") && JAResult[0].perp() > 10.0) || (pars.InputName.Contains("hat57_") && JAResult[0].perp() > 14.0) || (pars.InputName.Contains("hat79_") && JAResult[0].perp() > 18.0) || (pars.InputName.Contains("hat911_") && JAResult[0].perp() > 22.0) || (pars.InputName.Contains("hat1115_") && JAResult[0].perp() > 30.0) || (pars.InputName.Contains("hat1520_") && JAResult[0].perp() > 40.0) || (pars.InputName.Contains("hat2025_") && JAResult[0].perp() > 50.0) || (pars.InputName.Contains("hat2535_") && JAResult[0].perp() > 70.0) || (pars.InputName.Contains("hat3545_") && JAResult[0].perp() > 90.0) || (pars.InputName.Contains("hat4555_") && JAResult[0].perp() > 110.0) || (pars.InputName.Contains("hat55999_") && JAResult[0].perp() > 1000.0))   
   {
     reject = 1;
     return EVENTRESULT::NOTACCEPTED;
   }
-  
+  else if ((pars.InputName.Contains("2_3") && JAResult[0].perp() > 6.0) || (pars.InputName.Contains("3_4") && JAResult[0].perp() > 8.0) || (pars.InputName.Contains("4_5") && JAResult[0].perp() > 10.0) || (pars.InputName.Contains("5_7") && JAResult[0].perp() > 14.0) || (pars.InputName.Contains("7_9") && JAResult[0].perp() > 18.0) || (pars.InputName.Contains("9_11") && JAResult[0].perp() > 22.0) || (pars.InputName.Contains("11_15") && JAResult[0].perp() > 30.0) || (pars.InputName.Contains("15_20") && JAResult[0].perp() > 40.0) || (pars.InputName.Contains("20_25") && JAResult[0].perp() > 50.0) || (pars.InputName.Contains("25_35") && JAResult[0].perp() > 70.0) || (pars.InputName.Contains("35_-1") && JAResult[0].perp() > 1000.0))
+  {
+    reject = 1;
+    return EVENTRESULT::NOTACCEPTED;
+  }
+
   int njets = JAResult.size();
 
   fastjet::contrib::SoftDrop sd(0, 0.1);
@@ -567,7 +581,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
 
     // jet charge
     double numerator = 0.0;
-    double kappa = 2.0;
+    double kappa = 0.5;
     double jetptne = 0.0;
     double jetpttot = 0.0;
 
@@ -725,10 +739,31 @@ void TurnOffCuts(std::shared_ptr<TStarJetPicoReader> pReader)
 double LookupRun12Xsec(TString filename)
 {
 
+  const int NUMBEROFPT = 11;
+  const static float XSEC[NUMBEROFPT] = {9.00581646, 1.461908221, 0.3544350863, 0.1513760388, 0.02488645725, 0.005845846143, 0.002304880181, 0.000342661835, 4.562988397e-05, 9.738041626e-06, 5.019978175e-07};
+  const static float NUMBEROFEVENT[NUMBEROFPT] = {2100295, 600300, 600300, 300289, 300289, 300289, 160295, 100302, 80293, 76303, 23307};
+  const static vector<string> vptbins = {"pp12Pico_pt2_3", "pp12Pico_pt3_4", "pp12Pico_pt4_5", "pp12Pico_pt5_7", "pp12Pico_pt7_9", "pp12Pico_pt9_11", "pp12Pico_pt11_15", "pp12Pico_pt15_20", "pp12Pico_pt20_25", "pp12Pico_pt25_35", "35_-1"};
+
+  for (int i = 0; i < vptbins.size(); ++i)
+  {
+    if (filename.Contains(vptbins.at(i).data()))
+      return XSEC[i] / NUMBEROFEVENT[i];
+  }
+
+  throw std::runtime_error("Not a valid filename");
+  return -1;
+}
+
+double LookupRun12XsecNew(TString filename)
+{
+
   const int NUMBEROFPT = 13;
   // const char *PTBINS[NUMBEROFPT]={"2_3","3_4","4_5","5_7","7_9","9_11","11_15","15_20","20_25","25_35","35_-1"};
-  const static float XSEC[NUMBEROFPT] = {9.0012, 1.46253, 0.354566, 0.151622, 0.0249062, 0.00584527, 0.00230158, 0.000342755, 4.57002e-05, 9.72535e-06, 4.69889e-07, 2.69202e-08, 1.43453e-09};
-  const static float NUMBEROFEVENT[NUMBEROFPT] = {3e6, 3e6, 3e6, 3e6, 3e6, 3e6, 3e6, 3e6, 3e6, 2e6, 2e6, 1e6, 1e6};
+  // Dmitry's embedding
+  // const static float XSEC[NUMBEROFPT] = {9.0012, 1.46253, 0.354566, 0.151622, 0.0249062, 0.00584527, 0.00230158, 0.000342755, 4.57002e-05, 9.72535e-06, 4.69889e-07, 2.69202e-08, 1.43453e-09};
+  // const static float NUMBEROFEVENT[NUMBEROFPT] = {3e6, 3e6, 3e6, 3e6, 3e6, 3e6, 3e6, 3e6, 3e6, 2e6, 2e6, 1e6, 1e6};
+  const static float XSEC[NUMBEROFPT] = {9.00176, 1.46259, 0.354407, 0.151627, 0.0249102, 0.00584656, 0.0023021, 0.000342608, 4.56842e-05, 9.71569e-06, 4.69593e-07, 2.69062e-08, 1.43197e-09};
+  const static float NUMBEROFEVENT[NUMBEROFPT] = {3614773, 3706843, 3709985, 3563592, 3637343, 17337984, 17233020, 16422119, 3547865, 2415179, 2525739, 1203188, 1264931};
   const static vector<string> vptbins = {"pt-hat23_", "pt-hat34_", "pt-hat45_", "pt-hat57_", "pt-hat79_", "pt-hat911_", "pt-hat1115_", "pt-hat1520_", "pt-hat2025_", "pt-hat2535_", "pt-hat3545_", "pt-hat4555_", "pt-hat55999_"};
   for (int i = 0; i < vptbins.size(); ++i)
   {
