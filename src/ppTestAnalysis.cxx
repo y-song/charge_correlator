@@ -428,27 +428,6 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     return EVENTRESULT::PROBLEM;
   }
 
-  /*if (abs(vz) > 30)
-  {
-    reject = 2;
-    return EVENTRESULT::NOTACCEPTED;
-  }
-
-  switch (pars.intype)
-  {
-  case MCPICO:
-      break;
-  case INPICO:
-      if (not triggered)
-      {
-           return EVENTRESULT::NOTACCEPTED;
-      }
-      break;
-  default:
-    cerr << "Unknown intype " << pars.intype << endl;
-    return EVENTRESULT::PROBLEM;
-  }*/
-
   // Fill particle container
   // -----------------------
   for (int i = 0; i < pFullEvent->GetEntries(); ++i)
