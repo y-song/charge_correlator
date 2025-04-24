@@ -63,7 +63,7 @@ public:
     int mult;
     double nef;
     double vz;
-    RootResultStruct(TStarJetVectorJet orig, double pt, double eta, double y, double phi, double m, int n, double q, double rg, double zg, double mg, double nef, double weight, int reject, int mcevi, int mult, double vz) : orig(orig), pt(pt), eta(eta), y(y), phi(phi), m(m), n(n), q(q), rg(rg), zg(zg), mg(mg), nef(nef), weight(weight), reject(reject), mcevi(mcevi), mult(mult), vz(vz){};
+    RootResultStruct(TStarJetVectorJet orig, double pt, double eta, double y, double phi, double m, int n, double q, double rg, double zg, double mg, double nef, double weight, int reject, int mcevi, int mult, double vz) : orig(orig), pt(pt), eta(eta), y(y), phi(phi), m(m), n(n), q(q), rg(rg), zg(zg), mg(mg), nef(nef), weight(weight), reject(reject), mcevi(mcevi), mult(mult), vz(vz) {};
     ClassDef(RootResultStruct, 1)
 };
 
@@ -132,7 +132,7 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
     int pprunid;
     PpChain->SetBranchAddress("runid", &pprunid);
     int pprunid1;
-    PpChain->SetBranchAddress("runid1", &pprunid1);    
+    PpChain->SetBranchAddress("runid1", &pprunid1);
     double ppweight;
     PpChain->SetBranchAddress("weight", &ppweight);
     int rcreject;
@@ -161,7 +161,7 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
     PpChain->SetBranchAddress("n", rcn);
     double rcnef[1000];
     PpChain->SetBranchAddress("nef", rcnef);
-   
+
     //! Output and histograms
     TFile *fout = new TFile(dir + "matched/" + OutFile, "RECREATE");
     TTree *MatchedTree = new TTree("MatchedTree", "Matched Jets");
@@ -219,7 +219,7 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
     int N = McChain->GetEntries();
     cout << "Number of Pythia events: " << N << endl;
     cout << "Number of Geant events:  " << PpChain->GetEntries() << endl;
-    //McChain->GetEntry(0); // this event contains a truth jet
+    // McChain->GetEntry(0); // this event contains a truth jet
     McChain->GetEntry(2); // for small sample QA, this event contains a truth jet
     TStarJetVectorJet *dummyjet = (TStarJetVectorJet *)McJets->At(0);
 
@@ -230,18 +230,18 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
     {
         if (!(mcEvi % 500000))
             cout << "Working on " << mcEvi << " / " << N << endl;
-	
+
         McChain->GetEntry(mcEvi);
 
         if (mcreject > 0) // skip bad events with high weights
-	{
-	    continue;
-	}
-	if (abs(mcvz) > 30)
-	{
-	    continue;
-	}
-	if (mcpt_list.find(mcpttot) != mcpt_list.end())
+        {
+            continue;
+        }
+        if (abs(mcvz) > 30)
+        {
+            continue;
+        }
+        if (mcpt_list.find(mcpttot) != mcpt_list.end())
         {
             continue; // some events have identical total particle pT
         }
@@ -250,34 +250,37 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
             mcpt_list.insert(mcpttot);
         }
 
-	vector<RootResultStruct> mcresult;
+        vector<RootResultStruct> mcresult;
 
         for (int j = 0; j < mcnjets; ++j)
         {
             TStarJetVectorJet *mcjet = (TStarJetVectorJet *)McJets->At(j);
-	    mcresult.push_back(RootResultStruct(*mcjet, mcjet->Pt(), mcjet->Eta(), mcjet->Rapidity(), mcjet->Phi(), mcjet->M(), mcn[j], mcq[j], mcrg[j], mczg[j], mcmg[j], mcnef[j], mcweight, mcreject, mcEvi, mcmult, mcvz));   
+            mcresult.push_back(RootResultStruct(*mcjet, mcjet->Pt(), mcjet->Eta(), mcjet->Rapidity(), mcjet->Phi(), mcjet->M(), mcn[j], mcq[j], mcrg[j], mczg[j], mcmg[j], mcnef[j], mcweight, mcreject, mcEvi, mcmult, mcvz));
         } // end of mcjet loop
 
         int ppevi = PpChain->GetEntryNumberWithIndex(mcrunid, mceventid);
         PpChain->GetEntry(ppevi);
-	vector<RootResultStruct> ppresult;
+        vector<RootResultStruct> ppresult;
 
-	if (ppevi >= 0)
-	{
-		if (rcreject > 0)  continue; // go to next MC event
-        	if (abs(ppvz) > 30)  continue;
-		if (pppt_list.find(pppttot) != pppt_list.end())	continue;
-		else
-        	{
-            		pppt_list.insert(pppttot);
-        	}
+        if (ppevi >= 0)
+        {
+            if (rcreject > 0)
+                continue; // go to next MC event
+            if (abs(ppvz) > 30)
+                continue;
+            if (pppt_list.find(pppttot) != pppt_list.end())
+                continue;
+            else
+            {
+                pppt_list.insert(pppttot);
+            }
 
-        	for (int j = 0; j < ppnjets; ++j)
-        	{
-            		TStarJetVectorJet *ppjet = (TStarJetVectorJet *)PpJets->At(j); 
-           		ppresult.push_back(RootResultStruct(*ppjet, ppjet->Pt(), ppjet->Eta(), ppjet->Rapidity(), ppjet->Phi(), ppjet->M(), rcn[j], rcq[j], rcrg[j], rczg[j], rcmg[j], rcnef[j], ppweight, rcreject, mcEvi, rcmult, ppvz));
-	    	}
-	} // end of ppjet loop
+            for (int j = 0; j < ppnjets; ++j)
+            {
+                TStarJetVectorJet *ppjet = (TStarJetVectorJet *)PpJets->At(j);
+                ppresult.push_back(RootResultStruct(*ppjet, ppjet->Pt(), ppjet->Eta(), ppjet->Rapidity(), ppjet->Phi(), ppjet->M(), rcn[j], rcq[j], rcrg[j], rczg[j], rcmg[j], rcnef[j], ppweight, rcreject, mcEvi, rcmult, ppvz));
+            }
+        } // end of ppjet loop
 
         //! Sort them together
         vector<MatchedRootResultStruct> MatchedResult;
@@ -298,7 +301,7 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
                             MatchedResult.push_back(MatchedRootResultStruct(*mcit, *ppit));
                             ppit = ppresult.erase(ppit);
                             matched = true;
-                            //h_pt1s_pt1->Fill(mcit->pt1, ppit->pt1, ppweight);
+                            // h_pt1s_pt1->Fill(mcit->pt1, ppit->pt1, ppweight);
                             break;
                         }
                         else
@@ -323,7 +326,7 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
             MatchedResult.push_back(MatchedRootResultStruct(RootResultStruct(*dummyjet, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, mcweight, mcreject, mcEvi, mcmult, mcvz), *ppit));
             ++ppit;
         }
-        
+
         for (vector<MatchedRootResultStruct>::iterator res = MatchedResult.begin(); res != MatchedResult.end(); ++res)
         {
             pt = res->first.pt;
@@ -363,5 +366,4 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
 
     fout->Write();
     return 0;
-
 }
