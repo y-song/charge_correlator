@@ -1,9 +1,3 @@
-//! Code to read in geant + pythia output trees and match them
-//! Youqi Song & Raghav Kunnawalkam Elayavalli & Kolja Kauder
-//! contact - youqi.song@yale.edu
-//! HAS to be compiled,
-//! root -l MatchGeantToPythia.cxx+("pythia.root", "geant.root")
-
 #include <TF1.h>
 #include <TH1.h>
 #include <TH2.h>
@@ -52,7 +46,7 @@ public:
     double y;
     double phi;
     double m;
-    int n;
+    int runid1;
     double q;
     double rg;
     double zg;
@@ -62,8 +56,9 @@ public:
     int mcevi;
     int mult;
     double nef;
+    int n;
     double vz;
-    RootResultStruct(TStarJetVectorJet orig, double pt, double eta, double y, double phi, double m, int n, double q, double rg, double zg, double mg, double nef, double weight, int reject, int mcevi, int mult, double vz) : orig(orig), pt(pt), eta(eta), y(y), phi(phi), m(m), n(n), q(q), rg(rg), zg(zg), mg(mg), nef(nef), weight(weight), reject(reject), mcevi(mcevi), mult(mult), vz(vz) {};
+    RootResultStruct(TStarJetVectorJet orig, double pt, double eta, double y, double phi, double m, int runid1, double q, double rg, double zg, double mg, double nef, int n, double weight, int reject, int mcevi, int mult, double vz) : orig(orig), pt(pt), eta(eta), y(y), phi(phi), m(m), runid1(runid1), q(q), rg(rg), zg(zg), mg(mg), nef(nef), n(n), weight(weight), reject(reject), mcevi(mcevi), mult(mult), vz(vz) {};
     ClassDef(RootResultStruct, 1)
 };
 
@@ -76,7 +71,7 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
     float EtaCut = 1.0 - RCut;
     int nj = 0;
 
-    TString dir = "/gpfs01/star/pwg/youqi/run12/final/results/";
+    TString dir = "/gpfs01/star/pwg/youqi/run12/final_0628/results_20235003/";
 
     TFile *Mcf = new TFile(dir + "pythia/" + McFile);
     TTree *McChain = (TTree *)Mcf->Get("ResultTree");
@@ -88,6 +83,8 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
 
     int mcrunid;
     McChain->SetBranchAddress("runid", &mcrunid);
+    int mcrunid1;
+    McChain->SetBranchAddress("runid1", &mcrunid1);
     int mceventid;
     McChain->SetBranchAddress("eventid", &mceventid);
     double mcweight;
@@ -219,43 +216,50 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
     int N = McChain->GetEntries();
     cout << "Number of Pythia events: " << N << endl;
     cout << "Number of Geant events:  " << PpChain->GetEntries() << endl;
-    // McChain->GetEntry(0); // this event contains a truth jet
-    McChain->GetEntry(2); // for small sample QA, this event contains a truth jet
-    TStarJetVectorJet *dummyjet = (TStarJetVectorJet *)McJets->At(0);
+    TStarJetVectorJet *dummyjet = new TStarJetVectorJet();
 
-    set<float> mcpt_list;
-    set<float> pppt_list;
+    // read lists of bad runs
+    set<int> badrun_list;
+    FILE *file = fopen("/gpfs01/star/pwg/youqi/run12/final/badrun_isaac.list", "r");
+    char file_content[256];
+    badrun_list.insert(0);
+    while (fgets(file_content, 256, file) != NULL)
+    {
+        file_content[strcspn(file_content, "\n")] = 0;
+        badrun_list.insert(atoi(file_content));
+    }
+
+    int tot_recojets = 0;
+    int tot_recoevts = 0;
 
     for (Long64_t mcEvi = 0; mcEvi < N; ++mcEvi) // event loop
     {
-        if (!(mcEvi % 500000))
+        if (!(mcEvi % 100000))
             cout << "Working on " << mcEvi << " / " << N << endl;
 
         McChain->GetEntry(mcEvi);
 
         if (mcreject > 0) // skip bad events with high weights
         {
-            continue;
+            continue; // go to the next MC event
         }
-        if (abs(mcvz) > 30)
+        if (abs(mcvz) > 30) 
+        /*
+            see embedding_qa.pptx for why this is needed
+            without this cut, tot_recoevts, tot_recojets = 7425500, 4240809    
+        */
         {
             continue;
         }
-        if (mcpt_list.find(mcpttot) != mcpt_list.end())
+        if (badrun_list.find(mcrunid1) != badrun_list.end()) // this should always be false for 20235003 since bad runs are rejected in creating pythia.root already
         {
-            continue; // some events have identical total particle pT
+            return -1;
         }
-        else
-        {
-            mcpt_list.insert(mcpttot);
-        }
-
         vector<RootResultStruct> mcresult;
-
         for (int j = 0; j < mcnjets; ++j)
         {
             TStarJetVectorJet *mcjet = (TStarJetVectorJet *)McJets->At(j);
-            mcresult.push_back(RootResultStruct(*mcjet, mcjet->Pt(), mcjet->Eta(), mcjet->Rapidity(), mcjet->Phi(), mcjet->M(), mcn[j], mcq[j], mcrg[j], mczg[j], mcmg[j], mcnef[j], mcweight, mcreject, mcEvi, mcmult, mcvz));
+            mcresult.push_back(RootResultStruct(*mcjet, mcjet->Pt(), mcjet->Eta(), mcjet->Rapidity(), mcjet->Phi(), mcjet->M(), mcrunid1, mcq[j], mcrg[j], mczg[j], mcmg[j], mcnef[j], mcn[j], mcweight, mcreject, mcEvi, mcmult, mcvz));
         } // end of mcjet loop
 
         int ppevi = PpChain->GetEntryNumberWithIndex(mcrunid, mceventid);
@@ -264,21 +268,16 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
 
         if (ppevi >= 0)
         {
-            if (rcreject > 0)
-                continue; // go to next MC event
-            if (abs(ppvz) > 30)
-                continue;
-            if (pppt_list.find(pppttot) != pppt_list.end())
-                continue;
-            else
-            {
-                pppt_list.insert(pppttot);
-            }
-
+            if (abs(ppvz) > 30) // this should always be false for 20235003 since bad |vz| is rejected in MuDsts already
+                return -1;
+            if (badrun_list.find(pprunid1) != badrun_list.end()) // this should always be false for 20235003 since bad runs are rejected in creating geant.root already
+                return -1;
+            tot_recoevts += 1;
             for (int j = 0; j < ppnjets; ++j)
             {
                 TStarJetVectorJet *ppjet = (TStarJetVectorJet *)PpJets->At(j);
-                ppresult.push_back(RootResultStruct(*ppjet, ppjet->Pt(), ppjet->Eta(), ppjet->Rapidity(), ppjet->Phi(), ppjet->M(), rcn[j], rcq[j], rcrg[j], rczg[j], rcmg[j], rcnef[j], ppweight, rcreject, mcEvi, rcmult, ppvz));
+                ppresult.push_back(RootResultStruct(*ppjet, ppjet->Pt(), ppjet->Eta(), ppjet->Rapidity(), ppjet->Phi(), ppjet->M(), pprunid1, rcq[j], rcrg[j], rczg[j], rcmg[j], rcnef[j], rcn[j], ppweight, rcreject, mcEvi, rcmult, ppvz));
+                tot_recojets += 1;
             }
         } // end of ppjet loop
 
@@ -301,7 +300,6 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
                             MatchedResult.push_back(MatchedRootResultStruct(*mcit, *ppit));
                             ppit = ppresult.erase(ppit);
                             matched = true;
-                            // h_pt1s_pt1->Fill(mcit->pt1, ppit->pt1, ppweight);
                             break;
                         }
                         else
@@ -314,16 +312,16 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
                 {
                     mcit = mcresult.erase(mcit);
                 }
-                else
+                else // misses
                 {
-                    MatchedResult.push_back(MatchedRootResultStruct(*mcit, RootResultStruct(*dummyjet, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, ppweight, rcreject, mcEvi, rcmult, ppvz)));
+                    MatchedResult.push_back(MatchedRootResultStruct(*mcit, RootResultStruct(*dummyjet, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, ppweight, rcreject, mcEvi, rcmult, ppvz)));
                     ++mcit;
                 }
             }
         }
         for (vector<RootResultStruct>::iterator ppit = ppresult.begin(); ppit != ppresult.end();) // fakes
         {
-            MatchedResult.push_back(MatchedRootResultStruct(RootResultStruct(*dummyjet, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, mcweight, mcreject, mcEvi, mcmult, mcvz), *ppit));
+            MatchedResult.push_back(MatchedRootResultStruct(RootResultStruct(*dummyjet, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, mcweight, mcreject, mcEvi, mcmult, mcvz), *ppit));
             ++ppit;
         }
 
@@ -352,6 +350,12 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
             nef = res->first.nef;
             nefs = res->second.nef;
 
+            if ((res->second.mcevi != res->first.mcevi) && res->first.mcevi > 0 && res->second.mcevi > 0)
+            {
+                cout << "Event mismatch!" << endl;
+                return -1;
+            }
+
             if (res->second.mcevi > res->first.mcevi)
             {
                 mcevi = res->second.mcevi;
@@ -364,6 +368,8 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
         }
     }
 
+    std::cout << tot_recoevts << ", " << tot_recojets << std::endl;
     fout->Write();
+
     return 0;
 }

@@ -230,97 +230,96 @@ ppTestAnalysis::ppTestAnalysis(const int argc, const char **const argv)
   }
 
   if (!argsokay)
+  {
+    cerr << "usage: " << argv[0] << endl
+         << " [-o OutFileName]" << endl
+         << " [-N Nevents (<0 for all)]" << endl
+         << " [-R radius]" << endl
+         << " [-lja LargeJetAlgorithm]" << endl
+         << " [-i infilepattern]" << endl
+         << " [-c chainname]" << endl
+         << " [-intype pico|mcpico(embedding)]" << endl
+         << " [-trig trigger name (e.g. HT)]" << endl
+         << " [-pj PtJetMin PtJetMax]" << endl
+         << " [-ec EtaConsCut]" << endl
+         << " [-pc PtConsMin PtConsMax]" << endl
+         << " [-hadcorr HadronicCorrection]  -- Set to a negative value for MIP correction." << endl
+         << " [-psc PtSubConsMin PtSubConsMax]" << endl
+         << " [-fakeeff (0..1)] -- enable fake efficiency for systematics. 0.95 is a reasonable example." << endl
+         << " [-towunc -1|0|1 ] -- Shift tower energy by this times " << pars.fTowUnc << endl
+         << " [-geantnum true|false] (Force Geant run event id hack)" << endl
+         << endl
+         << endl
+         << "NOTE: Wildcarded file patterns should be in single quotes." << endl
+         << endl;
+    throw std::runtime_error("Not a valid list of options");
+  }
+
+  // Consistency checks
+  // ------------------
+
+  if (pars.PtJetMin <= 0)
+  {
+    throw std::runtime_error("PtJetMin needs to be positive (0.001 will work).");
+  }
+
+  if (pars.intype == MCPICO)
+  {
+    // This refers to the JetTreeMc branch
+    if (pars.ChainName != "JetTreeMc")
     {
-      cerr << "usage: " << argv[0] << endl
-           << " [-o OutFileName]" << endl
-           << " [-N Nevents (<0 for all)]" << endl
-           << " [-R radius]" << endl
-           << " [-lja LargeJetAlgorithm]" << endl
-           << " [-i infilepattern]" << endl
-           << " [-c chainname]" << endl
-           << " [-intype pico|mcpico(embedding)]" << endl
-           << " [-trig trigger name (e.g. HT)]" << endl
-           << " [-pj PtJetMin PtJetMax]" << endl
-           << " [-ec EtaConsCut]" << endl
-           << " [-pc PtConsMin PtConsMax]" << endl
-           << " [-hadcorr HadronicCorrection]  -- Set to a negative value for MIP correction." << endl
-           << " [-psc PtSubConsMin PtSubConsMax]" << endl
-           << " [-fakeeff (0..1)] -- enable fake efficiency for systematics. 0.95 is a reasonable example." << endl
-           << " [-towunc -1|0|1 ] -- Shift tower energy by this times " << pars.fTowUnc << endl
-           << " [-geantnum true|false] (Force Geant run event id hack)" << endl
-           << endl
-           << endl
-           << "NOTE: Wildcarded file patterns should be in single quotes." << endl
-           << endl;
-      throw std::runtime_error("Not a valid list of options");
+      throw std::runtime_error("Unsuitable chain name for pars.intype==MCPICO");
     }
-
-    // Consistency checks
-    // ------------------
-
-    if (pars.PtJetMin <= 0)
+  }
+  if (pars.ChainName == "JetTreeMc")
+  {
+    if (pars.intype != MCPICO)
     {
-      throw std::runtime_error("PtJetMin needs to be positive (0.001 will work).");
+      throw std::runtime_error("Unsuitable chain name for pars.intype==MCPICO");
     }
+  }
 
-    if (pars.intype == MCPICO)
-    {
-      // This refers to the JetTreeMc branch
-      if (pars.ChainName != "JetTreeMc")
-      {
-        throw std::runtime_error("Unsuitable chain name for pars.intype==MCPICO");
-      }
-    }
-    if (pars.ChainName == "JetTreeMc")
-    {
-      if (pars.intype != MCPICO)
-      {
-        throw std::runtime_error("Unsuitable chain name for pars.intype==MCPICO");
-      }
-    }
+  // Derived rapidity cuts
+  // ---------------------
+  EtaJetCut = pars.EtaConsCut - pars.R;
+  EtaGhostCut = EtaJetCut + 2.0 * pars.R;
 
-    // Derived rapidity cuts
-    // ---------------------
-    EtaJetCut = pars.EtaConsCut - pars.R;
-    EtaGhostCut = EtaJetCut + 2.0 * pars.R;
+  // Jet candidate selectors
+  // -----------------------
+  select_jet_eta = SelectorAbsEtaMax(EtaJetCut);
+  select_jet_pt = SelectorPtRange(pars.PtJetMin, pars.PtJetMax);
+  // select_jet_m = SelectorMassMin(pars.MJetMin);
+  if (pars.intype == MCPICO)
+  {
+    select_jet = select_jet_eta * select_jet_pt;
+  }
+  if (pars.intype == INPICO)
+  {
+    select_jet = select_jet_eta * select_jet_pt; //* select_jet_m;
+  }
 
-    // Jet candidate selectors
-    // -----------------------
-    select_jet_eta = SelectorAbsEtaMax(EtaJetCut);
-    select_jet_pt = SelectorPtRange(pars.PtJetMin, pars.PtJetMax);
-    //select_jet_m = SelectorMassMin(pars.MJetMin);
-    if (pars.intype == MCPICO)
-    {
-      select_jet = select_jet_eta * select_jet_pt;
-    }
-    if (pars.intype == INPICO)
-    {
-      select_jet = select_jet_eta * select_jet_pt; //* select_jet_m;
-    }
+  // Repeat on subjets?
+  // ------------------
+  pars.Recursive = pars.InputName.Contains("Pythia") && false;
 
-    // Repeat on subjets?
-    // ------------------
-    pars.Recursive = pars.InputName.Contains("Pythia") && false;
+  // Initialize jet finding
+  // ----------------------
+  JetDef = JetDefinition(pars.LargeJetAlgorithm, pars.R);
 
-    // Initialize jet finding
-    // ----------------------
-    JetDef = JetDefinition(pars.LargeJetAlgorithm, pars.R);
-
-    cout << " R = " << pars.R << endl;
-    cout << " Original jet algorithm : " << pars.LargeJetAlgorithm << endl;
-    cout << " PtJetMin = " << pars.PtJetMin << endl;
-    cout << " PtJetMax = " << pars.PtJetMax << endl;
-    cout << " MJetMin = " << pars.MJetMin << endl;
-    cout << " PtConsMin = " << pars.PtConsMin << endl;
-    cout << " PtConsMax = " << pars.PtConsMax << endl;
-    cout << " Constituent eta cut = " << pars.EtaConsCut << endl;
-    cout << " Jet eta cut = " << EtaJetCut << endl;
-    cout << " Ghosts out to eta = " << EtaGhostCut << endl;
-    cout << " Reading tree named \"" << pars.ChainName << "\" from " << pars.InputName << endl;
-    cout << " intype = " << pars.intype << endl;
-    cout << " Writing to " << pars.OutFileName << endl;
-    cout << " ----------------------------" << endl;
-  
+  cout << " R = " << pars.R << endl;
+  cout << " Original jet algorithm : " << pars.LargeJetAlgorithm << endl;
+  cout << " PtJetMin = " << pars.PtJetMin << endl;
+  cout << " PtJetMax = " << pars.PtJetMax << endl;
+  cout << " MJetMin = " << pars.MJetMin << endl;
+  cout << " PtConsMin = " << pars.PtConsMin << endl;
+  cout << " PtConsMax = " << pars.PtConsMax << endl;
+  cout << " Constituent eta cut = " << pars.EtaConsCut << endl;
+  cout << " Jet eta cut = " << EtaJetCut << endl;
+  cout << " Ghosts out to eta = " << EtaGhostCut << endl;
+  cout << " Reading tree named \"" << pars.ChainName << "\" from " << pars.InputName << endl;
+  cout << " intype = " << pars.intype << endl;
+  cout << " Writing to " << pars.OutFileName << endl;
+  cout << " ----------------------------" << endl;
 }
 //----------------------------------------------------------------------
 ppTestAnalysis::~ppTestAnalysis()
@@ -363,7 +362,7 @@ bool ppTestAnalysis::InitChains()
   return true;
 }
 //----------------------------------------------------------------------
-// Main routine for one event. 
+// Main routine for one event.
 EVENTRESULT ppTestAnalysis::RunEvent()
 {
   TStarJetVector *sv;
@@ -387,7 +386,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
   njets = 0;
   vz = 999;
   particles.clear();
-  
+
   switch (pars.intype)
   {
     // =====================================================
@@ -413,13 +412,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     // reproducible to match Geant and GeantMc data.
     if (pars.UseGeantNumbering)
     {
-      TString cname = gSystem->BaseName(pReader->GetInputChain()->GetCurrentFile()->GetName());
-      UInt_t filehash = cname.Hash();
-      while (filehash > INT_MAX - 100000)
-        filehash -= INT_MAX / 4; // some random large number
-      if (filehash < 1000000)
-        filehash += 1000001;
-      runid = filehash;
+      runid = LookupFileId(pReader->GetInputChain()->GetCurrentFile()->GetName());
       eventid = pReader->GetNOfCurrentEvent();
     }
     break;
@@ -496,7 +489,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
 
   // For pythia, use cross section as weight
   // ---------------------------------------
- 
+
   if (pars.InputName.Contains("pt-hat"))
   {
     TString currentfile = pReader->GetInputChain()->GetCurrentFile()->GetName();
@@ -515,7 +508,6 @@ EVENTRESULT ppTestAnalysis::RunEvent()
       throw std::runtime_error("mcweight unchanged!");
     }
   }
- 
 
   // Run analysis
   // ------------
@@ -528,14 +520,14 @@ EVENTRESULT ppTestAnalysis::RunEvent()
 
   JetAnalyzer &JA = *pJA;
   vector<PseudoJet> JAResult = sorted_by_pt(select_jet(JA.inclusive_jets()));
-  
+
   if (JAResult.size() == 0)
   {
     return EVENTRESULT::NOJETS;
   }
 
   // check if the event has high weight
-  if ((pars.InputName.Contains("hat23_") && JAResult[0].perp() > 6.0) || (pars.InputName.Contains("hat34_") && JAResult[0].perp() > 8.0) || (pars.InputName.Contains("hat45_") && JAResult[0].perp() > 10.0) || (pars.InputName.Contains("hat57_") && JAResult[0].perp() > 14.0) || (pars.InputName.Contains("hat79_") && JAResult[0].perp() > 18.0) || (pars.InputName.Contains("hat911_") && JAResult[0].perp() > 22.0) || (pars.InputName.Contains("hat1115_") && JAResult[0].perp() > 30.0) || (pars.InputName.Contains("hat1520_") && JAResult[0].perp() > 40.0) || (pars.InputName.Contains("hat2025_") && JAResult[0].perp() > 50.0) || (pars.InputName.Contains("hat2535_") && JAResult[0].perp() > 70.0) || (pars.InputName.Contains("hat3545_") && JAResult[0].perp() > 90.0) || (pars.InputName.Contains("hat4555_") && JAResult[0].perp() > 110.0) || (pars.InputName.Contains("hat55999_") && JAResult[0].perp() > 1000.0))   
+  if ((pars.InputName.Contains("hat23_") && JAResult[0].perp() > 6.0) || (pars.InputName.Contains("hat34_") && JAResult[0].perp() > 8.0) || (pars.InputName.Contains("hat45_") && JAResult[0].perp() > 10.0) || (pars.InputName.Contains("hat57_") && JAResult[0].perp() > 14.0) || (pars.InputName.Contains("hat79_") && JAResult[0].perp() > 18.0) || (pars.InputName.Contains("hat911_") && JAResult[0].perp() > 22.0) || (pars.InputName.Contains("hat1115_") && JAResult[0].perp() > 30.0) || (pars.InputName.Contains("hat1520_") && JAResult[0].perp() > 40.0) || (pars.InputName.Contains("hat2025_") && JAResult[0].perp() > 50.0) || (pars.InputName.Contains("hat2535_") && JAResult[0].perp() > 70.0) || (pars.InputName.Contains("hat3545_") && JAResult[0].perp() > 90.0) || (pars.InputName.Contains("hat4555_") && JAResult[0].perp() > 110.0) || (pars.InputName.Contains("hat55999_") && JAResult[0].perp() > 1000.0))
   {
     reject = 1;
     return EVENTRESULT::NOTACCEPTED;
@@ -590,7 +582,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     if (pars.MaxJetNEF < 1.0 && jetptne / jetpttot > pars.MaxJetNEF)
       continue;
 
-   Result.push_back(ResultStruct(CurrentJet, SDJet, q));
+    Result.push_back(ResultStruct(CurrentJet, SDJet, q));
   }
   // By default, sort for original jet pt
   sort(Result.begin(), Result.end(), ResultStruct::origptgreater);
@@ -746,11 +738,30 @@ double LookupRun12XsecNew(TString filename)
   const static vector<string> vptbins = {"pt-hat23_", "pt-hat34_", "pt-hat45_", "pt-hat57_", "pt-hat79_", "pt-hat911_", "pt-hat1115_", "pt-hat1520_", "pt-hat2025_", "pt-hat2535_", "pt-hat3545_", "pt-hat4555_", "pt-hat55999_"};
   for (int i = 0; i < vptbins.size(); ++i)
   {
-    if (filename.Contains(vptbins.at(i).data()))                                                                                           return XSEC[i] / NUMBEROFEVENT[i];
-  }                                                                                                                                                                                                                                                                         throw std::runtime_error("Not a valid filename");
+    if (filename.Contains(vptbins.at(i).data()))
+      return XSEC[i] / NUMBEROFEVENT[i];
+  }
+  throw std::runtime_error("Not a valid filename");
   return -1;
 }
 
+int LookupFileId(TString filename)
+{
+  int file_id = 0;
+  const static vector<string> vptbins = {"pt-hat23_", "pt-hat34_", "pt-hat45_", "pt-hat57_", "pt-hat79_", "pt-hat911_", "pt-hat1115_", "pt-hat1520_", "pt-hat2025_", "pt-hat2535_", "pt-hat3545_", "pt-hat4555_", "pt-hat55999_"};
+  for (int i = 0; i < vptbins.size(); ++i)
+  {
+    if (filename.Contains(vptbins.at(i).data()))
+      file_id += (i+1)*1000;
+  }
+  auto npos = filename.First("_");
+  TString substring(filename(npos+1, 3));
+  file_id += substring.Atoi();
+  return file_id;
+  /*
+  e.g., pt-hat1115_002.root gives: substring == 002, file_id == 7002
+  */
+}
 //----------------------------------------------------------------------
 ostream &operator<<(ostream &ostr, const PseudoJet &jet)
 {

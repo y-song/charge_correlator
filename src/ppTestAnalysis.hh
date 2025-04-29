@@ -52,6 +52,7 @@ using namespace contrib;
 #include <random>
 #include <algorithm>
 
+int LookupFileId(TString filename);
 double LookupRun12Xsec(TString filename);
 double LookupRun12XsecNew(TString filename);
 /*
