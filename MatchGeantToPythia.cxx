@@ -166,6 +166,14 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
     MatchedTree->Branch("pt", &pt, "pt/D");
     double pts;
     MatchedTree->Branch("pts", &pts, "pts/D");
+    double eta;
+    MatchedTree->Branch("eta", &eta, "eta/D");
+    double etas;
+    MatchedTree->Branch("etas", &etas, "etas/D");
+    double phi;
+    MatchedTree->Branch("phi", &phi, "phi/D");
+    double phis;
+    MatchedTree->Branch("phis", &phis, "phis/D");
     double m;
     MatchedTree->Branch("m", &m, "m/D");
     double ms;
@@ -329,6 +337,10 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
         {
             pt = res->first.pt;
             pts = res->second.pt;
+            eta = res->first.eta;
+            etas = res->second.eta;
+            phi = res->first.phi;
+            phis = res->second.phi;
             m = res->first.m;
             ms = res->second.m;
             n = res->first.n;
