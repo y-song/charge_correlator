@@ -51,8 +51,8 @@ For code QA person: Your output file would show up as `results/matched/matched.r
 ### Detector effect systematics
 
 6. Edit `run_genat_analysis_new.sh`: change `-hadcorr 1` to `-hadcorr 0.5`. Run `./run_genat_analysis_new.sh`. Hadd the output files in `results/geant/` to a signle file `geant_hadcorr05.root`
-7. Edit `run_genat_analysis_new.sh`: change `-hadcorr 0.5` back to `-hadcorr 1`, and change `-towunc 0` to `-towunc 1`. to  Run `./run_genat_analysis_new.sh`. Hadd the output files in `results/geant/` to a signle file `geant_tow104.root`.
-8. Edit `run_genat_analysis_new.sh`: change `-towunc 1` back to `-towunc 0`, and change `-fakeeff 1` to `-fakeeff 0.96`. to  Run `./run_genat_analysis_new.sh`. Hadd the output files in `results/geant/` to a signle file `geant_eff096.root`.
+7. Edit `run_genat_analysis_new.sh`: change `-hadcorr 0.5` back to `-hadcorr 1`, and change `-towunc 0` to `-towunc 1`. Run `./run_genat_analysis_new.sh`. Hadd the output files in `results/geant/` to a signle file `geant_tow104.root`.
+8. Edit `run_genat_analysis_new.sh`: change `-towunc 1` back to `-towunc 0`, and change `-fakeeff 1` to `-fakeeff 0.96`. Run `./run_genat_analysis_new.sh`. Hadd the output files in `results/geant/` to a signle file `geant_eff096.root`.
 9. Run `root -l 'MatchGeantToPythia.cxx+("pythia.root", "geant_hadcorr05.root", "matched_hadcorr05.root")'`
 10. Run `root -l 'MatchGeantToPythia.cxx+("pythia.root", "geant_tow104.root", "matched_tow104.root")'`
 11. Run `root -l 'MatchGeantToPythia.cxx+("pythia.root", "geant_eff096.root", "matched_eff096.root")'`
