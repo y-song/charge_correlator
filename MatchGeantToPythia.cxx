@@ -263,6 +263,10 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
     MatchedTree->Branch("n", &n, "n/I");
     int ns;
     MatchedTree->Branch("ns", &ns, "ns/I");
+    int nch;
+    MatchedTree->Branch("nch", &nch, "nch/I");
+    int nchs;
+    MatchedTree->Branch("nchs", &nchs, "nchs/I");
     double w;
     MatchedTree->Branch("w", &w, "w/D");
     double ws;
