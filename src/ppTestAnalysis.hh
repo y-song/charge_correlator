@@ -76,7 +76,22 @@ public:
   PseudoJet orig;
   PseudoJet sd;
   double q;
-  ResultStruct(PseudoJet orig, PseudoJet sd, double q) : orig(orig), sd(sd), q(q){};
+  int nch;
+  int b;
+  double dr;
+  double epair;
+  double z;
+  double pt1;
+  double pt2;
+  double qlead;
+  double qsublead;
+  double y1;
+  double y2;
+  double phi1;
+  double phi2;
+  ResultStruct(PseudoJet orig, PseudoJet sd, double q, int nch, int b, double dr, double epair, double z, double pt1, double pt2, double qlead, double qsublead, double y1, double y2, double phi1, double phi2) : orig(orig), sd(sd), q(q), nch(nch), b(b), dr(dr), epair(epair), z(z), pt1(pt1), pt2(pt2), qlead(qlead), qsublead(qsublead), y1(y1), y2(y2), phi1(phi1), phi2(phi2) {};
+
+  ResultStruct(PseudoJet orig, PseudoJet sd, double q) : orig(orig) {};
 
   static bool origptgreater(ResultStruct const &a, ResultStruct const &b)
   {
@@ -148,7 +163,7 @@ private:
   int runid1;
   float pttot;
   double vz;
-  //int highw;
+  // int highw;
   int mult;
   double refmult;
   double weight;

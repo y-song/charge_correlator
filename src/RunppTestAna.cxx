@@ -133,9 +133,35 @@ int main(int argc, const char **argv)
   ResultTree->Branch("mg", mg, "mg[njets]/D");
   int n[1000];
   ResultTree->Branch("n", n, "n[njets]/I");
+  int nch[1000];
+  ResultTree->Branch("nch", nch, "nch[njets]/I");
   int index[1000];
   ResultTree->Branch("index", index, "index[njets]/I");
-  
+  int b[1000]; // -1 if the 2 leading tracks are of opposite charge, 0 if any is neutral
+  ResultTree->Branch("b", b, "b[njets]/I");
+  double dr[1000];
+  ResultTree->Branch("dr", dr, "dr[njets]/D");
+  double epair[1000];
+  ResultTree->Branch("epair", epair, "epair[njets]/D");
+  double z[1000];
+  ResultTree->Branch("z", z, "z[njets]/D");
+  double pt1[1000];
+  ResultTree->Branch("pt1", pt1, "pt1[njets]/D");
+  double pt2[1000];
+  ResultTree->Branch("pt2", pt2, "pt2[njets]/D");
+  double qlead[1000];
+  ResultTree->Branch("qlead", qlead, "qlead[njets]/D");
+  double qsublead[1000];
+  ResultTree->Branch("qsublead", qsublead, "qsublead[njets]/D");
+  double y1[1000];
+  ResultTree->Branch("y1", y1, "y1[njets]/D");
+  double y2[1000];
+  ResultTree->Branch("y2", y2, "y2[njets]/D");
+  double phi1[1000];
+  ResultTree->Branch("phi1", phi1, "phi1[njets]/D");
+  double phi2[1000];
+  ResultTree->Branch("phi2", phi2, "phi2[njets]/D");  
+
   // Helpers
   TStarJetVector *sv;
 
@@ -217,8 +243,7 @@ int main(int argc, const char **argv)
         TStarJetVector sv = TStarJetVector(MakeTLorentzVector(gr.orig));
         sv.SetCharge(gr.orig.user_info<JetAnalysisUserInfo>().GetQuarkCharge() / 3);
         new (Jets[ijet]) TStarJetVectorJet(sv);
-        
-	nef[ijet] = gr.orig.user_info<JetAnalysisUserInfo>().GetNumber();
+        nef[ijet] = gr.orig.user_info<JetAnalysisUserInfo>().GetNumber();
         pt[ijet] = gr.orig.perp();
         m[ijet] = gr.orig.m();
         q[ijet] = gr.q;
@@ -226,8 +251,20 @@ int main(int argc, const char **argv)
         zg[ijet] = gr.sd.structure_of<fastjet::contrib::SoftDrop>().symmetry();
         mg[ijet] = gr.sd.m();
         n[ijet] = gr.orig.constituents().size();
+        nch[ijet] = gr.nch;
         index[ijet] = ijet;
-        
+        b[ijet] = gr.b;
+        dr[ijet] = gr.dr;
+        epair[ijet] = gr.epair;
+        z[ijet] = gr.z;
+        pt1[ijet] = gr.pt1;
+        pt2[ijet] = gr.pt2;
+        qlead[ijet] = gr.qlead;
+        qsublead[ijet] = gr.qsublead;
+        y1[ijet] = gr.y1;
+        y2[ijet] = gr.y2;
+        phi1[ijet] = gr.phi1;
+        phi2[ijet] = gr.phi2;        
         ijet++;
       }
 

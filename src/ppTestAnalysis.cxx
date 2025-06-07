@@ -549,6 +549,47 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     PseudoJet &SDJet = sdjets[ijet];
     PseudoJet NeutralPart = join(OnlyNeutral(CurrentJet.constituents()));
     PseudoJet ChargedPart = join(OnlyCharged(CurrentJet.constituents()));
+    int nch = ChargedPart.constituents().size();
+
+    // rc
+    int b = -9;
+    double dr = -9.0;
+    double epair = -9.0;
+    double z = -9.0;
+    double pt1 = -9;
+    double pt2 = -9;
+    double qlead = -9;
+    double qsublead = -9;
+    double y1 = -9;
+    double y2 = -9;
+    double phi1 = -9;
+    double phi2 = -9;
+
+    vector<PseudoJet> ChargedPartVec = sorted_by_pt(ChargedPart.constituents());
+
+    if (ChargedPartVec.size() >= 2)
+    {
+      qlead = ChargedPartVec.at(0).user_info<JetAnalysisUserInfo>().GetQuarkCharge();
+      qsublead = ChargedPartVec.at(1).user_info<JetAnalysisUserInfo>().GetQuarkCharge();
+      double elead = ChargedPartVec.at(0).e();
+      double esublead = ChargedPartVec.at(1).e();
+      pt1 = ChargedPartVec.at(0).perp();
+      pt2 = ChargedPartVec.at(1).perp();
+      y1 = ChargedPartVec.at(0).rap();
+      y2 = ChargedPartVec.at(1).rap();
+      phi1 = ChargedPartVec.at(0).phi();
+      phi2 = ChargedPartVec.at(1).phi();
+
+      epair = elead + esublead;
+      z = elead / (elead + esublead);
+      dr = ChargedPartVec.at(0).delta_R(ChargedPartVec.at(1));
+      if (qlead * qsublead > 0)
+        b = 1;
+      else if (qlead * qsublead < 0)
+        b = -1;
+      else
+        b = 0;
+    }
 
     // jet charge
     double numerator = 0.0;
@@ -582,7 +623,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     if (pars.MaxJetNEF < 1.0 && jetptne / jetpttot > pars.MaxJetNEF)
       continue;
 
-    Result.push_back(ResultStruct(CurrentJet, SDJet, q));
+    Result.push_back(ResultStruct(CurrentJet, SDJet, q, nch, b, dr, epair, z, pt1, pt2, qlead, qsublead, y1, y2, phi1, phi2));
   }
   // By default, sort for original jet pt
   sort(Result.begin(), Result.end(), ResultStruct::origptgreater);
