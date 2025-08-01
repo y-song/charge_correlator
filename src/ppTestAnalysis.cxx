@@ -421,6 +421,9 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     return EVENTRESULT::PROBLEM;
   }
 
+  TList *tracksList = pReader->GetListOfSelectedTracks();
+  //cout << "new event" << endl;
+
   // Fill particle container
   // -----------------------
   for (int i = 0; i < pFullEvent->GetEntries(); ++i)
@@ -432,6 +435,34 @@ EVENTRESULT ppTestAnalysis::RunEvent()
       continue;
     if (fabs(sv->Eta()) > pars.EtaConsCut)
       continue;
+
+    if (pars.intype == INPICO) // only check sDCA at reco level
+    {
+      int trackid = sv->GetTrackID();
+      if (trackid < 0)
+      {
+        // it means it is a track -  not tower
+        //cout << "track" << endl;
+        TStarJetPicoPrimaryTrack *track = (TStarJetPicoPrimaryTrack *)tracksList->At(i);
+        float sDCAxy = track->GetsDCAxy();
+        int charge = track->GetCharge();
+        if (charge == 1 && sDCAxy > 0.5)
+        {
+          //cout << "track charge, sDCA: " << charge << ", " << sDCAxy << endl;
+          continue;
+        }
+        else if (charge == -1 && sDCAxy < -0.5)
+        {
+          //cout << "track charge, sDCA: " << charge << ", " << sDCAxy << endl;
+          continue;
+        }
+      }
+      /*else
+      {
+        cout << "tower" << endl;
+      }*/
+    }
+    //cout << "This track/tower will be pushed back to particles" << endl;
 
     //! setting pid mass for particles from pythia
     if (pars.intype == MCPICO)
@@ -793,10 +824,10 @@ int LookupFileId(TString filename)
   for (int i = 0; i < vptbins.size(); ++i)
   {
     if (filename.Contains(vptbins.at(i).data()))
-      file_id += (i+1)*1000;
+      file_id += (i + 1) * 1000;
   }
   auto npos = filename.First("_");
-  TString substring(filename(npos+1, 3));
+  TString substring(filename(npos + 1, 3));
   file_id += substring.Atoi();
   return file_id;
   /*
