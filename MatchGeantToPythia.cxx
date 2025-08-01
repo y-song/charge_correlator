@@ -413,6 +413,8 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
             for (vector<RootResultStruct>::iterator mcit = mcresult.begin(); mcit != mcresult.end();)
             {
                 bool matched = false;
+                double minDeltaR = 10000; // Initialize to a large value
+                auto bestMatch = ppresult.end();
                 if (ppresult.size() > 0)
                 {
                     for (vector<RootResultStruct>::iterator ppit = ppresult.begin(); ppit != ppresult.end();)
@@ -420,28 +422,26 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
                         Double_t deta = mcit->y - ppit->y;
                         Double_t dphi = TVector2::Phi_mpi_pi(mcit->phi - ppit->phi);
                         Double_t dr = TMath::Sqrt(deta * deta + dphi * dphi);
-                        if (dr < RCut)
+                        if (dr < RCut && dr < minDeltaR)
                         {
-                            MatchedResult.push_back(MatchedRootResultStruct(*mcit, *ppit));
-                            ppit = ppresult.erase(ppit);
+                            minDeltaR = dr;
+                            bestMatch = ppit;
                             matched = true;
-                            break;
                         }
-                        else
-                        {
-                            ++ppit;
-                        }
+                        ++ppit;
                     }
                 }
+                // If a match was found, add it and remove from available jets
                 if (matched)
                 {
-                    mcit = mcresult.erase(mcit);
+                    MatchedResult.push_back(MatchedRootResultStruct(*mcit, *bestMatch));
+                    ppresult.erase(bestMatch);
                 }
                 else // misses
                 {
                     MatchedResult.push_back(MatchedRootResultStruct(*mcit, RootResultStruct(*dummyjet, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, ppweight, rcreject, mcEvi, rcmult, ppvz, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9)));
-                    ++mcit;
                 }
+                ++mcit;
             }
         }
         for (vector<RootResultStruct>::iterator ppit = ppresult.begin(); ppit != ppresult.end();) // fakes
