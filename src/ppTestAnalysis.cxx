@@ -436,7 +436,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     if (fabs(sv->Eta()) > pars.EtaConsCut)
       continue;
 
-    /*if (pars.intype == INPICO) // only check sDCA at reco level
+    if (pars.intype == INPICO) // only check sDCA at reco level
     {
       int trackid = sv->GetTrackID();
       if (trackid < 0)
@@ -461,7 +461,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
       //{
       //  cout << "tower" << endl;
       //}
-    }*/
+    }
     //cout << "This track/tower will be pushed back to particles" << endl;
 
     //! setting pid mass for particles from pythia
