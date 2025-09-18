@@ -333,6 +333,8 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
     MatchedTree->Branch("nef", &nef, "nef/D");
     double nefs;
     MatchedTree->Branch("nefs", &nefs, "nefs/D");
+    int run;
+    MatchedTree->Branch("run", &run, "run/I");
 
     TH1::SetDefaultSumw2();
     TH2::SetDefaultSumw2();
@@ -384,8 +386,12 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
         for (int j = 0; j < mcnjets; ++j)
         {
             TStarJetVectorJet *mcjet = (TStarJetVectorJet *)McJets->At(j);
-            mcresult.push_back(RootResultStruct(*mcjet, mcjet->Pt(), mcjet->Eta(), mcjet->Rapidity(), mcjet->Phi(), mcjet->M(), mcrunid1, mcq[j], mcrg[j], mczg[j], mcmg[j], mcnef[j], mcn[j], mcnch[j], mcweight, mcreject, mcEvi, mcmult, mcvz, mcb[j], mcdr[j], mcpt1[j], mcpt2[j], mcz[j], mcepair[j], mcqlead[j], mcqsublead[j], mcy1[j], mcy2[j], mcphi1[j], mcphi2[j]));
+            mcresult.push_back(RootResultStruct(*mcjet, mcjet->Pt(), mcjet->Eta(), mcjet->Rapidity(), mcjet->Phi(), mcjet->M(), mcrunid1, mcq[j], mcrg[j], mczg[j], mcmg[j], mcnef[j], j, mcnch[j], mcweight, mcreject, mcEvi, mcmult, mcvz, mcb[j], mcdr[j], mcpt1[j], mcpt2[j], mcz[j], mcepair[j], mcqlead[j], mcqsublead[j], mcy1[j], mcy2[j], mcphi1[j], mcphi2[j]));
         } // end of mcjet loop
+
+        // ! Reset event variables
+        pprunid1 = -9;
+        ppweight = -9;
 
         int ppevi = PpChain->GetEntryNumberWithIndex(mcrunid, mceventid);
         PpChain->GetEntry(ppevi);
@@ -401,7 +407,7 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
             for (int j = 0; j < ppnjets; ++j)
             {
                 TStarJetVectorJet *ppjet = (TStarJetVectorJet *)PpJets->At(j);
-                ppresult.push_back(RootResultStruct(*ppjet, ppjet->Pt(), ppjet->Eta(), ppjet->Rapidity(), ppjet->Phi(), ppjet->M(), pprunid1, rcq[j], rcrg[j], rczg[j], rcmg[j], rcnef[j], rcn[j], rcnch[j], ppweight, rcreject, mcEvi, rcmult, ppvz, rcb[j], rcdr[j], rcpt1[j], rcpt2[j], rcz[j], rcepair[j], rcqlead[j], rcqsublead[j], rcy1[j], rcy2[j], rcphi1[j], rcphi2[j]));
+                ppresult.push_back(RootResultStruct(*ppjet, ppjet->Pt(), ppjet->Eta(), ppjet->Rapidity(), ppjet->Phi(), ppjet->M(), pprunid1, rcq[j], rcrg[j], rczg[j], rcmg[j], rcnef[j], j, rcnch[j], ppweight, rcreject, mcEvi, rcmult, ppvz, rcb[j], rcdr[j], rcpt1[j], rcpt2[j], rcz[j], rcepair[j], rcqlead[j], rcqsublead[j], rcy1[j], rcy2[j], rcphi1[j], rcphi2[j]));
                 tot_recojets += 1;
             }
         } // end of ppjet loop
@@ -439,14 +445,14 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
                 }
                 else // misses
                 {
-                    MatchedResult.push_back(MatchedRootResultStruct(*mcit, RootResultStruct(*dummyjet, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, ppweight, rcreject, mcEvi, rcmult, ppvz, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9)));
+                    MatchedResult.push_back(MatchedRootResultStruct(*mcit, RootResultStruct(*dummyjet, -9, -9, -9, -9, -9, pprunid1, -9, -9, -9, -9, -9, -9, -9, ppweight, rcreject, mcEvi, rcmult, ppvz, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9)));
                     ++mcit;
                 }
             }
         }
         for (vector<RootResultStruct>::iterator ppit = ppresult.begin(); ppit != ppresult.end();) // fakes
         {
-            MatchedResult.push_back(MatchedRootResultStruct(RootResultStruct(*dummyjet, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, mcweight, mcreject, mcEvi, mcmult, mcvz, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9), *ppit));
+            MatchedResult.push_back(MatchedRootResultStruct(RootResultStruct(*dummyjet, -9, -9, -9, -9, -9, mcrunid1, -9, -9, -9, -9, -9, -9, -9, mcweight, mcreject, mcEvi, mcmult, mcvz, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9, -9), *ppit));
             ++ppit;
         }
 
@@ -518,6 +524,21 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
             else
             {
                 mcevi = res->first.mcevi;
+            }
+
+            if ((res->second.runid1 != res->first.runid1) && res->first.runid1 > 0 && res->second.runid1 > 0)
+            {
+                cout << res->first.runid1 << ", " << res->second.runid1 << ", mismatch!" << endl;
+                return -1;
+            }
+
+            if (res->second.runid1 > res->first.runid1)
+            {
+                run = res->second.runid1;
+            }
+            else
+            {
+                run = res->first.runid1;
             }
             MatchedTree->Fill();
         }
