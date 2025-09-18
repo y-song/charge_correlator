@@ -436,7 +436,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     if (fabs(sv->Eta()) > pars.EtaConsCut)
       continue;
 
-    if (pars.intype == INPICO) // only check sDCA at reco level
+    /*if (pars.intype == INPICO) // only check sDCA at reco level
     {
       int trackid = sv->GetTrackID();
       if (trackid < 0)
@@ -461,7 +461,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
       //{
       //  cout << "tower" << endl;
       //}
-    }
+    }*/
     //cout << "This track/tower will be pushed back to particles" << endl;
 
     //! setting pid mass for particles from pythia
@@ -654,7 +654,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     if (pars.MaxJetNEF < 1.0 && jetptne / jetpttot > pars.MaxJetNEF)
       continue;
 
-    Result.push_back(ResultStruct(ChargedPart, SDJet, q, nch, b, dr, epair, z, pt1, pt2, qlead, qsublead, y1, y2, phi1, phi2));
+    Result.push_back(ResultStruct(CurrentJet, SDJet, q, nch, b, dr, epair, z, pt1, pt2, qlead, qsublead, y1, y2, phi1, phi2));
   }
   // By default, sort for original jet pt
   sort(Result.begin(), Result.end(), ResultStruct::origptgreater);

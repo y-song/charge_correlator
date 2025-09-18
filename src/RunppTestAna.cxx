@@ -241,9 +241,9 @@ int main(int argc, const char **argv)
       {
 
         TStarJetVector sv = TStarJetVector(MakeTLorentzVector(gr.orig));
-        // sv.SetCharge(gr.orig.user_info<JetAnalysisUserInfo>().GetQuarkCharge() / 3);
+        sv.SetCharge(gr.orig.user_info<JetAnalysisUserInfo>().GetQuarkCharge() / 3);
         new (Jets[ijet]) TStarJetVectorJet(sv);
-        nef[ijet] = 1.0; // gr.orig.user_info<JetAnalysisUserInfo>().GetNumber();
+        nef[ijet] = gr.orig.user_info<JetAnalysisUserInfo>().GetNumber();
         pt[ijet] = gr.orig.perp();
         m[ijet] = gr.orig.m();
         q[ijet] = gr.q;
