@@ -431,7 +431,7 @@ EVENTRESULT ppTestAnalysis::RunEvent()
     sv = (TStarJetVector *)pFullEvent->At(i);
 
     // Ensure kinematic similarity
-    if (sv->Pt() < pars.PtConsMin || sv->Pt() > pars.PtConsMax)
+    if (sv->Pt() < pars.PtConsMin)
       continue;
     if (fabs(sv->Eta()) > pars.EtaConsCut)
       continue;
