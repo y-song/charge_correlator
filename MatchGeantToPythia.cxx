@@ -386,7 +386,7 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
         for (int j = 0; j < mcnjets; ++j)
         {
             TStarJetVectorJet *mcjet = (TStarJetVectorJet *)McJets->At(j);
-            mcresult.push_back(RootResultStruct(*mcjet, mcjet->Pt(), mcjet->Eta(), mcjet->Rapidity(), mcjet->Phi(), mcjet->M(), mcrunid1, mcq[j], mcrg[j], mczg[j], mcmg[j], mcnef[j], j, mcnch[j], mcweight, mcreject, mcEvi, mcmult, mcvz, mcb[j], mcdr[j], mcpt1[j], mcpt2[j], mcz[j], mcepair[j], mcqlead[j], mcqsublead[j], mcy1[j], mcy2[j], mcphi1[j], mcphi2[j]));
+            mcresult.push_back(RootResultStruct(*mcjet, mcjet->Pt(), mcjet->Eta(), mcjet->Rapidity(), mcjet->Phi(), mcjet->M(), mcrunid1, mcq[j], mcrg[j], mczg[j], mcmg[j], mcnef[j], mcn[j], mcnch[j], mcweight, mcreject, mcEvi, mcmult, mcvz, mcb[j], mcdr[j], mcpt1[j], mcpt2[j], mcz[j], mcepair[j], mcqlead[j], mcqsublead[j], mcy1[j], mcy2[j], mcphi1[j], mcphi2[j]));
         } // end of mcjet loop
 
         // ! Reset event variables
@@ -407,7 +407,7 @@ int MatchGeantToPythia(string McFile, string PpFile, string OutFile = "test.root
             for (int j = 0; j < ppnjets; ++j)
             {
                 TStarJetVectorJet *ppjet = (TStarJetVectorJet *)PpJets->At(j);
-                ppresult.push_back(RootResultStruct(*ppjet, ppjet->Pt(), ppjet->Eta(), ppjet->Rapidity(), ppjet->Phi(), ppjet->M(), pprunid1, rcq[j], rcrg[j], rczg[j], rcmg[j], rcnef[j], j, rcnch[j], ppweight, rcreject, mcEvi, rcmult, ppvz, rcb[j], rcdr[j], rcpt1[j], rcpt2[j], rcz[j], rcepair[j], rcqlead[j], rcqsublead[j], rcy1[j], rcy2[j], rcphi1[j], rcphi2[j]));
+                ppresult.push_back(RootResultStruct(*ppjet, ppjet->Pt(), ppjet->Eta(), ppjet->Rapidity(), ppjet->Phi(), ppjet->M(), pprunid1, rcq[j], rcrg[j], rczg[j], rcmg[j], rcnef[j], rcn[j], rcnch[j], ppweight, rcreject, mcEvi, rcmult, ppvz, rcb[j], rcdr[j], rcpt1[j], rcpt2[j], rcz[j], rcepair[j], rcqlead[j], rcqsublead[j], rcy1[j], rcy2[j], rcphi1[j], rcphi2[j]));
                 tot_recojets += 1;
             }
         } // end of ppjet loop
