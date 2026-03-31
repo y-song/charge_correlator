@@ -64,7 +64,7 @@ public :
   
   double RefMultCut=0;        ///< Reference multiplicity. Needs to be rethought to accomodate pp and AuAu
   
-  double VzCut=30;            ///< Vertex z 
+  double VzCut=999;            ///< Vertex z 
   // const double VzDiffCut=6;         ///< |Vz(TPC) - Vz(VPD)| <-- NOT WORKING in older data (no VPD)
   double VzDiffCut=99999;      ///< |Vz(TPC) - Vz(VPD)|
   
